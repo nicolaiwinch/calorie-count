@@ -251,12 +251,17 @@ select.user-picker-input {
 /* Profile burn display */
 .profile-burn-display {
   text-align: center;
-  padding: 12px;
+  padding: 20px 12px;
   margin-bottom: 16px;
   background: var(--bg-input);
   border-radius: 12px;
   font-size: 14px;
   color: var(--color-green);
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Switch user button */

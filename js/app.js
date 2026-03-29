@@ -88,11 +88,20 @@ function openProfile() {
   if (!profile) return;
 
   document.getElementById('profileName').value = profile.name || '';
-  document.getElementById('profileGender').value = profile.gender || '';
   document.getElementById('profileAge').value = profile.age || '';
   document.getElementById('profileWeight').value = profile.weight_kg || '';
   document.getElementById('profileHeight').value = profile.height_cm || '';
   document.getElementById('profileActivity').value = profile.activity || 'light';
+
+  // Set gender select — need to explicitly set selectedIndex for reliability
+  const genderSelect = document.getElementById('profileGender');
+  const genderValue = profile.gender || '';
+  for (let i = 0; i < genderSelect.options.length; i++) {
+    if (genderSelect.options[i].value === genderValue) {
+      genderSelect.selectedIndex = i;
+      break;
+    }
+  }
 
   updateBurnDisplay();
   document.getElementById('profileOverlay').classList.add('active');
@@ -126,7 +135,15 @@ function updateBurnDisplay() {
   const multiplier = ACTIVITY_MULTIPLIERS[activity] || 1.375;
   const tdee = Math.round(bmr * multiplier);
 
-  display.textContent = `Daily burn: ${tdee} kcal (${activity.replace('_', ' ')})`;
+  const activityLabels = {
+    sedentary: 'sedentary',
+    light: 'lightly active',
+    moderate: 'moderately active',
+    active: 'active',
+    very_active: 'very active',
+  };
+  const label = activityLabels[activity] || activity;
+  display.innerHTML = `<div style="font-size:36px;font-weight:200;margin-bottom:4px">${tdee} <span style="font-size:16px">kcal/day</span></div><div style="font-size:12px;opacity:0.6">BMR ${Math.round(bmr)} × ${multiplier} (${label})</div>`;
   display.style.color = 'var(--color-green)';
 }
 

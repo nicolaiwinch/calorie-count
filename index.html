@@ -150,7 +150,18 @@
       document.getElementById('loadingMsg').innerHTML =
         '<span style="color:#e74c3c">Error: ' + msg + '<br>' + url + ':' + line + '</span>';
     };
+    // Test: if this runs, basic JS works
+    document.getElementById('loadingMsg').textContent = 'JS works, loading modules...';
   </script>
   <script type="module" src="js/app.js"></script>
+  <script type="module">
+    // If modules fail to load, show error after 5 seconds
+    setTimeout(() => {
+      const msg = document.getElementById('loadingMsg');
+      if (msg && msg.style.display !== 'none') {
+        msg.innerHTML = '<span style="color:#e74c3c">Modules failed to load.<br>Try: Cmd+Shift+Delete → Clear cached files → Reload</span>';
+      }
+    }, 5000);
+  </script>
 </body>
 </html>

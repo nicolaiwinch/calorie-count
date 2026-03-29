@@ -24,7 +24,8 @@ export function getDayStart() {
 }
 
 export function getDayKey() {
-  return getDayStart().toISOString().slice(0, 10);
+  const d = getDayStart();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 // --- User ---

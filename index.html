@@ -223,7 +223,10 @@
       return dayStart;
     }
 
-    function getDayKey() { return getDayStart().toISOString().slice(0, 10); }
+    function getDayKey() {
+      var d = getDayStart();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
     function getCurrentUser() { return currentUser; }
     function getUserProfile() { return userProfile; }
     function getDailyBurn() { return (userProfile && userProfile.daily_burn) ? userProfile.daily_burn : 2200; }

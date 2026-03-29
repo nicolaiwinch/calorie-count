@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Calorie Counter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      min-height: 100vh;
+      padding: 0 0 100px 0;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    .header {
+      text-align: center;
+      padding: 60px 20px 20px;
+    }
+
+    .available-label {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0.6;
+      margin-bottom: 8px;
+    }
+
+    .available-calories {
+      font-size: 72px;
+      font-weight: 200;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.5s ease;
+      line-height: 1;
+    }
+
+    .available-unit {
+      font-size: 16px;
+      opacity: 0.5;
+      margin-top: 4px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-around;
+      padding: 20px;
+      margin: 10px 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 300;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.5;
+      margin-top: 4px;
+    }
+
+    .burn-bar-container {
+      margin: 16px 16px 0;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .burn-bar-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.5;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .burn-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .burn-bar-fill {
+      height: 100%;
+      background: #4ecdc4;
+      border-radius: 3px;
+      transition: width 1s linear;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      padding: 20px 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 16px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-food {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .btn-exercise {
+      background: #4ecdc4;
+      color: #1a1a2e;
+    }
+
+    .log-section {
+      padding: 0 16px;
+    }
+
+    .log-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.5;
+      margin-bottom: 10px;
+    }
+
+    .log-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+
+    .log-entry-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .log-entry-name {
+      font-size: 15px;
+    }
+
+    .log-entry-time {
+      font-size: 12px;
+      opacity: 0.4;
+      margin-top: 2px;
+    }
+
+    .log-entry-cal {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .log-entry-cal.food { color: #e74c3c; }
+    .log-entry-cal.exercise { color: #4ecdc4; }
+
+    .log-entry-delete {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.2);
+      font-size: 20px;
+      padding: 0 0 0 12px;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #2a2a4a;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 40px;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 16px;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      color: #eee;
+      font-size: 16px;
+      margin-bottom: 12px;
+      outline: none;
+    }
+
+    .modal input:focus {
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .modal input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+
+    .quick-picks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .quick-pick {
+      padding: 8px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.05);
+      color: #eee;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-btn-cancel {
+      background: rgba(255,255,255,0.1);
+      color: #eee;
+    }
+
+    .modal-btn-add {
+      background: #4ecdc4;
+      color: #1a1a2e;
+    }
+
+    .modal-btn-add.food-mode {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .empty-log {
+      text-align: center;
+      padding: 30px;
+      opacity: 0.3;
+      font-size: 14px;
+    }
+
+    .color-red { color: #e74c3c; }
+    .color-yellow { color: #f39c12; }
+    .color-green { color: #4ecdc4; }
+
+    .settings-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.3);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 8px;
+      z-index: 10;
+    }
+
+    .reset-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.3);
+      font-size: 11px;
+      cursor: pointer;
+      padding: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="reset-btn" onclick="resetDay()">Reset</button>
+
+  <div class="header">
+    <div class="available-label">Available Calories</div>
+    <div class="available-calories" id="availableCalories">0</div>
+    <div class="available-unit">kcal</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-value" id="burnedStat">0</div>
+      <div class="stat-label">Burned</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="eatenStat">0</div>
+      <div class="stat-label">Eaten</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="exerciseStat">0</div>
+      <div class="stat-label">Exercise</div>
+    </div>
+  </div>
+
+  <div class="burn-bar-container">
+    <div class="burn-bar-label">
+      <span>Day progress (6 AM – 6 AM)</span>
+      <span id="burnBarPct">0%</span>
+    </div>
+    <div class="burn-bar">
+      <div class="burn-bar-fill" id="burnBarFill"></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-food" onclick="openModal('food')">+ Food</button>
+    <button class="btn btn-exercise" onclick="openModal('exercise')">+ Exercise</button>
+  </div>
+
+  <div class="log-section">
+    <div class="log-title">Today's Log</div>
+    <div id="logEntries"></div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Add Food</div>
+      <input type="text" id="entryName" placeholder="What did you eat?" autocomplete="off">
+      <input type="number" id="entryCal" placeholder="Calories" inputmode="numeric">
+      <div class="quick-picks" id="quickPicks"></div>
+      <div class="modal-actions">
+        <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="modal-btn modal-btn-add" id="modalAddBtn" onclick="addEntry()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const DAILY_BURN = 2200;
+    const DAY_START_HOUR = 6; // 6 AM
+    const GREEN_THRESHOLD = 600;
+
+    let currentMode = 'food';
+    let entries = [];
+
+    const foodQuickPicks = [
+      { name: 'Coffee w/ milk', cal: 50 },
+      { name: 'Banana', cal: 105 },
+      { name: 'Sandwich', cal: 400 },
+      { name: 'Salad', cal: 250 },
+      { name: 'Rice & chicken', cal: 550 },
+      { name: 'Pasta', cal: 600 },
+      { name: 'Snack bar', cal: 200 },
+      { name: 'Beer', cal: 150 },
+    ];
+
+    const exerciseQuickPicks = [
+      { name: 'Walk 30 min', cal: 150 },
+      { name: 'Run 30 min', cal: 350 },
+      { name: 'Cycling 30 min', cal: 300 },
+      { name: 'Gym session', cal: 400 },
+      { name: 'Swimming 30 min', cal: 350 },
+      { name: 'Yoga 30 min', cal: 120 },
+    ];
+
+    function getDayStart() {
+      const now = new Date();
+      const dayStart = new Date(now);
+      dayStart.setHours(DAY_START_HOUR, 0, 0, 0);
+      if (now < dayStart) {
+        dayStart.setDate(dayStart.getDate() - 1);
+      }
+      return dayStart;
+    }
+
+    function getDayKey() {
+      return getDayStart().toISOString().slice(0, 10);
+    }
+
+    function loadEntries() {
+      const key = 'cal_' + getDayKey();
+      entries = JSON.parse(localStorage.getItem(key) || '[]');
+    }
+
+    function saveEntries() {
+      const key = 'cal_' + getDayKey();
+      localStorage.setItem(key, JSON.stringify(entries));
+    }
+
+    function getBurnedSoFar() {
+      const now = new Date();
+      const dayStart = getDayStart();
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+
+      const elapsed = now - dayStart;
+      const total = dayEnd - dayStart;
+      const fraction = Math.min(elapsed / total, 1);
+
+      return {
+        burned: Math.floor(DAILY_BURN * fraction),
+        fraction: fraction
+      };
+    }
+
+    function getTotals() {
+      let eaten = 0;
+      let exercise = 0;
+      entries.forEach(e => {
+        if (e.type === 'food') eaten += e.cal;
+        else exercise += e.cal;
+      });
+      return { eaten, exercise };
+    }
+
+    function updateDisplay() {
+      const { burned, fraction } = getBurnedSoFar();
+      const { eaten, exercise } = getTotals();
+      const available = burned - eaten + exercise;
+
+      const el = document.getElementById('availableCalories');
+      el.textContent = Math.round(available);
+
+      // Color
+      el.className = 'available-calories';
+      if (available < 0) {
+        el.classList.add('color-red');
+      } else if (available < GREEN_THRESHOLD) {
+        el.classList.add('color-yellow');
+      } else {
+        el.classList.add('color-green');
+      }
+
+      document.getElementById('burnedStat').textContent = Math.round(burned);
+      document.getElementById('eatenStat').textContent = eaten;
+      document.getElementById('exerciseStat').textContent = exercise;
+
+      const pct = Math.round(fraction * 100);
+      document.getElementById('burnBarFill').style.width = pct + '%';
+      document.getElementById('burnBarPct').textContent = pct + '%';
+    }
+
+    function renderLog() {
+      const container = document.getElementById('logEntries');
+      if (entries.length === 0) {
+        container.innerHTML = '<div class="empty-log">No entries yet today</div>';
+        return;
+      }
+
+      const sorted = [...entries].reverse();
+      container.innerHTML = sorted.map((e, i) => {
+        const realIndex = entries.length - 1 - i;
+        const sign = e.type === 'food' ? '-' : '+';
+        const cls = e.type === 'food' ? 'food' : 'exercise';
+        const time = new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div class="log-entry">
+            <div class="log-entry-info">
+              <div class="log-entry-name">${escapeHtml(e.name)}</div>
+              <div class="log-entry-time">${time}</div>
+            </div>
+            <div style="display:flex;align-items:center">
+              <div class="log-entry-cal ${cls}">${sign}${e.cal}</div>
+              <button class="log-entry-delete" onclick="deleteEntry(${realIndex})">×</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function openModal(mode) {
+      currentMode = mode;
+      document.getElementById('modalOverlay').classList.add('active');
+      document.getElementById('modalTitle').textContent = mode === 'food' ? 'Add Food' : 'Add Exercise';
+      document.getElementById('entryName').placeholder = mode === 'food' ? 'What did you eat?' : 'What exercise?';
+
+      const addBtn = document.getElementById('modalAddBtn');
+      addBtn.className = 'modal-btn modal-btn-add' + (mode === 'food' ? ' food-mode' : '');
+
+      const picks = mode === 'food' ? foodQuickPicks : exerciseQuickPicks;
+      document.getElementById('quickPicks').innerHTML = picks.map(p =>
+        `<button class="quick-pick" onclick="applyQuickPick('${p.name}', ${p.cal})">${p.name} (${p.cal})</button>`
+      ).join('');
+
+      document.getElementById('entryName').value = '';
+      document.getElementById('entryCal').value = '';
+
+      setTimeout(() => document.getElementById('entryName').focus(), 100);
+    }
+
+    function closeModal(event) {
+      if (event && event.target !== document.getElementById('modalOverlay')) return;
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function applyQuickPick(name, cal) {
+      document.getElementById('entryName').value = name;
+      document.getElementById('entryCal').value = cal;
+    }
+
+    function addEntry() {
+      const name = document.getElementById('entryName').value.trim() || (currentMode === 'food' ? 'Food' : 'Exercise');
+      const cal = parseInt(document.getElementById('entryCal').value);
+      if (!cal || cal <= 0) return;
+
+      entries.push({
+        type: currentMode,
+        name: name,
+        cal: cal,
+        time: new Date().toISOString()
+      });
+
+      saveEntries();
+      renderLog();
+      updateDisplay();
+      document.getElementById('modalOverlay').classList.remove('active');
+    }
+
+    function deleteEntry(index) {
+      entries.splice(index, 1);
+      saveEntries();
+      renderLog();
+      updateDisplay();
+    }
+
+    function resetDay() {
+      if (confirm('Reset all entries for today?')) {
+        entries = [];
+        saveEntries();
+        renderLog();
+        updateDisplay();
+      }
+    }
+
+    // Init
+    loadEntries();
+    renderLog();
+    updateDisplay();
+
+    // Update the live counter every second
+    setInterval(updateDisplay, 1000);
+
+    // Check for day rollover every minute
+    let currentDayKey = getDayKey();
+    setInterval(() => {
+      const newKey = getDayKey();
+      if (newKey !== currentDayKey) {
+        currentDayKey = newKey;
+        loadEntries();
+        renderLog();
+      }
+    }, 60000);
+
+    // Service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>

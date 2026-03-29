@@ -355,7 +355,7 @@
 
   <div class="burn-bar-container">
     <div class="burn-bar-label">
-      <span>Day progress (6 AM – 6 AM)</span>
+      <span>Day progress (midnight – midnight)</span>
       <span id="burnBarPct">0%</span>
     </div>
     <div class="burn-bar">
@@ -389,7 +389,7 @@
 
   <script>
     const DAILY_BURN = 2200;
-    const DAY_START_HOUR = 6; // 6 AM
+    const DAY_START_HOUR = 0; // Midnight
     const GREEN_THRESHOLD = 600;
 
     let currentMode = 'food';

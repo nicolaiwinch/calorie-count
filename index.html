@@ -154,25 +154,431 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(regs) {
         regs.forEach(function(r) { r.unregister(); });
-        if (regs.length > 0) {
-          // Service worker was found and killed — reload to get fresh files
-          document.getElementById('loadingMsg').textContent = 'Updating app...';
-          setTimeout(function() { location.reload(); }, 1000);
-        }
       });
     }
-    // Test: if this runs, basic JS works
-    document.getElementById('loadingMsg').textContent = 'JS works, loading modules...';
   </script>
-  <script type="module" src="js/app.js"></script>
-  <script type="module">
-    // If modules fail to load, show error after 5 seconds
-    setTimeout(() => {
-      const msg = document.getElementById('loadingMsg');
-      if (msg && msg.style.display !== 'none') {
-        msg.innerHTML = '<span style="color:#e74c3c">Modules failed to load.<br>Try: Cmd+Shift+Delete → Clear cached files → Reload</span>';
+  <script>
+  (function() {
+    'use strict';
+
+    // ===== config =====
+    var DAY_START_HOUR = 0;
+    var GREEN_THRESHOLD = 600;
+    var API_URL = localStorage.getItem('api_url') || 'https://calorie-counter-api-production.up.railway.app';
+
+    var FOOD_QUICK_PICKS = [
+      { name: 'Coffee w/ milk', cal: 50 },
+      { name: 'Banana', cal: 105 },
+      { name: 'Sandwich', cal: 400 },
+      { name: 'Salad', cal: 250 },
+      { name: 'Rice & chicken', cal: 550 },
+      { name: 'Pasta', cal: 600 },
+      { name: 'Snack bar', cal: 200 },
+      { name: 'Beer', cal: 150 },
+    ];
+
+    var EXERCISE_QUICK_PICKS = [
+      { name: 'Walk 30 min', cal: 150 },
+      { name: 'Run 30 min', cal: 350 },
+      { name: 'Cycling 30 min', cal: 300 },
+      { name: 'Gym session', cal: 400 },
+      { name: 'Swimming 30 min', cal: 350 },
+      { name: 'Yoga 30 min', cal: 120 },
+    ];
+
+    // ===== api =====
+    async function apiRequest(path, options) {
+      options = options || {};
+      var res = await fetch(API_URL + path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, options));
+      if (!res.ok) {
+        var err = await res.json().catch(function() { return { detail: res.statusText }; });
+        throw new Error(err.detail || 'API error');
       }
-    }, 5000);
+      return res.json();
+    }
+
+    function apiListUsers() { return apiRequest('/api/users/'); }
+    function apiGetUser(userId) { return apiRequest('/api/users/' + userId); }
+    function apiSaveUser(userId, profile) {
+      return apiRequest('/api/users/' + userId, { method: 'PUT', body: JSON.stringify(profile) });
+    }
+    function apiGetEntries(userId, date) { return apiRequest('/api/entries/' + userId + '/' + date); }
+    function apiAddEntry(userId, entry) {
+      return apiRequest('/api/entries/' + userId, { method: 'POST', body: JSON.stringify(entry) });
+    }
+    function apiDeleteEntry(userId, date, entryId) {
+      return apiRequest('/api/entries/' + userId + '/' + date + '/' + entryId, { method: 'DELETE' });
+    }
+
+    // ===== state =====
+    var entries = [];
+    var currentUser = localStorage.getItem('current_user') || null;
+    var userProfile = null;
+
+    function getDayStart() {
+      var now = new Date();
+      var dayStart = new Date(now);
+      dayStart.setHours(DAY_START_HOUR, 0, 0, 0);
+      if (now < dayStart) dayStart.setDate(dayStart.getDate() - 1);
+      return dayStart;
+    }
+
+    function getDayKey() { return getDayStart().toISOString().slice(0, 10); }
+    function getCurrentUser() { return currentUser; }
+    function getUserProfile() { return userProfile; }
+    function getDailyBurn() { return (userProfile && userProfile.daily_burn) ? userProfile.daily_burn : 2200; }
+    function getEntries() { return entries; }
+
+    async function setCurrentUser(userId) {
+      currentUser = userId;
+      localStorage.setItem('current_user', userId);
+      userProfile = await apiGetUser(userId);
+      await loadEntries();
+    }
+
+    async function loadEntries() {
+      if (!currentUser) { entries = []; return; }
+      try { entries = await apiGetEntries(currentUser, getDayKey()); }
+      catch(e) { entries = []; }
+    }
+
+    async function addEntryToState(type, name, cal) {
+      var entry = { type: type, name: name, cal: cal, time: new Date().toISOString() };
+      var saved = await apiAddEntry(currentUser, entry);
+      entries.push(saved);
+    }
+
+    async function deleteEntryFromState(entryId) {
+      await apiDeleteEntry(currentUser, getDayKey(), entryId);
+      entries = entries.filter(function(e) { return e.id !== entryId; });
+    }
+
+    async function clearAllEntries() {
+      var day = getDayKey();
+      await Promise.all(entries.map(function(e) { return apiDeleteEntry(currentUser, day, e.id); }));
+      entries = [];
+    }
+
+    function getTotals() {
+      var eaten = 0, exercise = 0;
+      entries.forEach(function(e) {
+        if (e.type === 'food') eaten += e.cal;
+        else exercise += e.cal;
+      });
+      return { eaten: eaten, exercise: exercise };
+    }
+
+    // ===== burn =====
+    function getBurnedSoFar() {
+      var now = new Date();
+      var dayStart = getDayStart();
+      var dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      var elapsed = now - dayStart;
+      var total = dayEnd - dayStart;
+      var fraction = Math.min(elapsed / total, 1);
+      return { burned: Math.floor(getDailyBurn() * fraction), fraction: fraction };
+    }
+
+    // ===== ui =====
+    function escapeHtml(text) {
+      var d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    function updateDisplay() {
+      var burn = getBurnedSoFar();
+      var totals = getTotals();
+      var available = burn.burned - totals.eaten + totals.exercise;
+
+      var el = document.getElementById('availableCalories');
+      el.textContent = Math.round(available);
+      el.className = 'available-calories';
+      if (available < 0) el.classList.add('color-red');
+      else if (available < GREEN_THRESHOLD) el.classList.add('color-yellow');
+      else el.classList.add('color-green');
+
+      var forecast = getDailyBurn() - totals.eaten + totals.exercise;
+      var forecastEl = document.getElementById('forecastCalories');
+      if (forecastEl) forecastEl.textContent = forecast + ' by midnight';
+
+      document.getElementById('burnedStat').textContent = Math.round(burn.burned);
+      document.getElementById('eatenStat').textContent = totals.eaten;
+      document.getElementById('exerciseStat').textContent = totals.exercise;
+
+      var pct = Math.round(burn.fraction * 100);
+      document.getElementById('burnBarFill').style.width = pct + '%';
+      document.getElementById('burnBarPct').textContent = pct + '%';
+
+      var userLabel = document.getElementById('currentUserLabel');
+      if (userLabel) userLabel.textContent = getCurrentUser() || 'No user';
+    }
+
+    function renderLog(onDelete) {
+      var container = document.getElementById('logEntries');
+      var ents = getEntries();
+      if (ents.length === 0) {
+        container.innerHTML = '<div class="empty-log">No entries yet today</div>';
+        return;
+      }
+      var sorted = ents.slice().reverse();
+      container.innerHTML = sorted.map(function(e) {
+        var sign = e.type === 'food' ? '-' : '+';
+        var cls = e.type === 'food' ? 'food' : 'exercise';
+        var time = new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+          escapeHtml(e.name) + '</div><div class="log-entry-time">' + time +
+          '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
+          cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
+          e.id + '">\u00d7</button></div></div>';
+      }).join('');
+      container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() { onDelete(btn.dataset.id); });
+      });
+    }
+
+    // ===== modal =====
+    var currentMode = 'food';
+    var onAddCallback = null;
+
+    function modalOverlay() { return document.getElementById('modalOverlay'); }
+    function modalNameInput() { return document.getElementById('entryName'); }
+    function modalCalInput() { return document.getElementById('entryCal'); }
+
+    function initModal(onAdd) {
+      onAddCallback = onAdd;
+      modalOverlay().addEventListener('click', function(e) {
+        if (e.target === modalOverlay()) closeModal();
+      });
+      document.getElementById('modalCancel').addEventListener('click', closeModal);
+      document.getElementById('modalAddBtn').addEventListener('click', submitModal);
+    }
+
+    function openModal(mode) {
+      currentMode = mode;
+      modalOverlay().classList.add('active');
+      document.getElementById('modalTitle').textContent = mode === 'food' ? 'Add Food' : 'Add Exercise';
+      modalNameInput().placeholder = mode === 'food' ? 'What did you eat?' : 'What exercise?';
+      var addBtn = document.getElementById('modalAddBtn');
+      addBtn.className = 'modal-btn modal-btn-add' + (mode === 'food' ? ' food-mode' : '');
+      var picks = mode === 'food' ? FOOD_QUICK_PICKS : EXERCISE_QUICK_PICKS;
+      document.getElementById('quickPicks').innerHTML = picks.map(function(p) {
+        return '<button class="quick-pick" data-name="' + p.name + '" data-cal="' + p.cal + '">' + p.name + ' (' + p.cal + ')</button>';
+      }).join('');
+      document.getElementById('quickPicks').querySelectorAll('.quick-pick').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          modalNameInput().value = btn.dataset.name;
+          modalCalInput().value = btn.dataset.cal;
+        });
+      });
+      modalNameInput().value = '';
+      modalCalInput().value = '';
+      setTimeout(function() { modalNameInput().focus(); }, 100);
+    }
+
+    function closeModal() { modalOverlay().classList.remove('active'); }
+
+    function submitModal() {
+      var name = modalNameInput().value.trim() || (currentMode === 'food' ? 'Food' : 'Exercise');
+      var cal = parseInt(modalCalInput().value);
+      if (!cal || cal <= 0) return;
+      if (onAddCallback) onAddCallback(currentMode, name, cal);
+      closeModal();
+    }
+
+    // ===== app =====
+    function refresh() {
+      updateDisplay();
+      renderLog(handleDelete);
+    }
+
+    async function handleDelete(entryId) {
+      await deleteEntryFromState(entryId);
+      refresh();
+    }
+
+    async function handleAdd(type, name, cal) {
+      await addEntryToState(type, name, cal);
+      refresh();
+    }
+
+    async function resetDay() {
+      if (confirm('Reset all entries for today?')) {
+        await clearAllEntries();
+        refresh();
+      }
+    }
+
+    async function showUserPicker() {
+      var picker = document.getElementById('userPicker');
+      var app = document.getElementById('appMain');
+      picker.classList.add('active');
+      app.style.display = 'none';
+      var list = document.getElementById('userList');
+      var loadingMsg = document.getElementById('loadingMsg');
+      try {
+        var users = await apiListUsers();
+        if (loadingMsg) loadingMsg.style.display = 'none';
+        if (users.length === 0) {
+          list.innerHTML = '<div class="empty-log">No users yet \u2014 create one below</div>';
+        } else {
+          list.innerHTML = users.map(function(u) {
+            var detail = u.daily_burn ? (u.daily_burn + ' kcal/day') : '';
+            return '<button class="user-pick-btn" data-id="' + u.id + '">' + u.name +
+              ' <span style="opacity:0.4;font-size:13px;float:right">' + detail + '</span></button>';
+          }).join('');
+          list.querySelectorAll('.user-pick-btn').forEach(function(btn) {
+            btn.addEventListener('click', async function() { await selectUser(btn.dataset.id); });
+          });
+        }
+      } catch (err) {
+        if (loadingMsg) loadingMsg.style.display = 'none';
+        list.innerHTML = '<div class="empty-log" style="opacity:0.6">Cannot reach server.<br>Check your connection.<br><br><small style="opacity:0.5">' + err.message + '</small></div>';
+      }
+    }
+
+    async function selectUser(userId) {
+      await setCurrentUser(userId);
+      document.getElementById('userPicker').classList.remove('active');
+      document.getElementById('appMain').style.display = 'block';
+      refresh();
+    }
+
+    async function handleCreateUser() {
+      var name = document.getElementById('newUserName').value.trim();
+      if (!name) return;
+      var gender = document.getElementById('newUserGender').value;
+      var age = parseInt(document.getElementById('newUserAge').value) || 0;
+      var weight = parseFloat(document.getElementById('newUserWeight').value) || 0;
+      var height = parseFloat(document.getElementById('newUserHeight').value) || 0;
+      var pin = document.getElementById('newUserPin').value.trim();
+      var activity = document.getElementById('newUserActivity').value;
+      var userId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      await apiSaveUser(userId, { name: name, gender: gender, age: age, weight_kg: weight, height_cm: height, activity: activity, pin: pin });
+      await setCurrentUser(userId);
+      document.getElementById('userPicker').classList.remove('active');
+      document.getElementById('appMain').style.display = 'block';
+      refresh();
+    }
+
+    // --- Profile ---
+    var ACTIVITY_MULTIPLIERS = { sedentary: 1.2, light: 1.3, moderate: 1.4, active: 1.5, very_active: 1.6 };
+
+    function openProfile() {
+      var profile = getUserProfile();
+      if (!profile) return;
+      document.getElementById('profileName').value = profile.name || '';
+      document.getElementById('profileAge').value = profile.age || '';
+      document.getElementById('profileWeight').value = profile.weight_kg || '';
+      document.getElementById('profileHeight').value = profile.height_cm || '';
+      document.getElementById('profileActivity').value = profile.activity || 'light';
+      var genderSelect = document.getElementById('profileGender');
+      var genderValue = profile.gender || '';
+      for (var i = 0; i < genderSelect.options.length; i++) {
+        if (genderSelect.options[i].value === genderValue) { genderSelect.selectedIndex = i; break; }
+      }
+      updateBurnDisplay();
+      document.getElementById('profileOverlay').classList.add('active');
+    }
+
+    function updateBurnDisplay() {
+      var gender = document.getElementById('profileGender').value;
+      var age = parseInt(document.getElementById('profileAge').value) || 0;
+      var weight = parseFloat(document.getElementById('profileWeight').value) || 0;
+      var height = parseFloat(document.getElementById('profileHeight').value) || 0;
+      var activity = document.getElementById('profileActivity').value;
+      var display = document.getElementById('profileBurnDisplay');
+      if (!gender || !age || !weight || !height) {
+        display.textContent = 'Fill in all fields to calculate daily burn';
+        display.style.color = 'var(--text-muted)';
+        return;
+      }
+      var bmr = 10 * weight + 6.25 * height - 5 * age;
+      bmr += gender === 'male' ? 5 : -161;
+      var multiplier = ACTIVITY_MULTIPLIERS[activity] || 1.375;
+      var tdee = Math.round(bmr * multiplier);
+      var activityLabels = { sedentary: 'sedentary', light: 'lightly active', moderate: 'moderately active', active: 'active', very_active: 'very active' };
+      var label = activityLabels[activity] || activity;
+      display.innerHTML = '<div style="font-size:36px;font-weight:200;margin-bottom:4px">' + tdee +
+        ' <span style="font-size:16px">kcal/day</span></div><div style="font-size:12px;opacity:0.6">BMR ' +
+        Math.round(bmr) + ' \u00d7 ' + multiplier + ' (' + label + ')</div>';
+      display.style.color = 'var(--color-green)';
+    }
+
+    async function saveProfile() {
+      var userId = getCurrentUser();
+      var profile = {
+        name: document.getElementById('profileName').value.trim(),
+        gender: document.getElementById('profileGender').value,
+        age: parseInt(document.getElementById('profileAge').value) || 0,
+        weight_kg: parseFloat(document.getElementById('profileWeight').value) || 0,
+        height_cm: parseFloat(document.getElementById('profileHeight').value) || 0,
+        activity: document.getElementById('profileActivity').value,
+        pin: getUserProfile() ? (getUserProfile().pin || '') : '',
+      };
+      userProfile = await apiSaveUser(userId, profile);
+      document.getElementById('profileOverlay').classList.remove('active');
+      refresh();
+    }
+
+    // --- Init ---
+    async function init() {
+      try {
+        initModal(handleAdd);
+        document.getElementById('btnFood').addEventListener('click', function() { openModal('food'); });
+        document.getElementById('btnExercise').addEventListener('click', function() { openModal('exercise'); });
+        document.getElementById('btnReset').addEventListener('click', resetDay);
+        document.getElementById('btnSwitchUser').addEventListener('click', showUserPicker);
+        document.getElementById('btnCreateUser').addEventListener('click', handleCreateUser);
+        document.getElementById('btnProfile').addEventListener('click', openProfile);
+        document.getElementById('profileCancel').addEventListener('click', function() {
+          document.getElementById('profileOverlay').classList.remove('active');
+        });
+        document.getElementById('profileOverlay').addEventListener('click', function(e) {
+          if (e.target === document.getElementById('profileOverlay'))
+            document.getElementById('profileOverlay').classList.remove('active');
+        });
+        document.getElementById('profileSave').addEventListener('click', saveProfile);
+
+        ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(function(id) {
+          document.getElementById(id).addEventListener('input', updateBurnDisplay);
+          document.getElementById(id).addEventListener('change', updateBurnDisplay);
+        });
+
+        var savedUser = getCurrentUser();
+        if (savedUser) {
+          try {
+            await setCurrentUser(savedUser);
+            document.getElementById('userPicker').classList.remove('active');
+            document.getElementById('appMain').style.display = 'block';
+            refresh();
+          } catch(e) { await showUserPicker(); }
+        } else {
+          await showUserPicker();
+        }
+
+        setInterval(updateDisplay, 1000);
+
+        var currentDayKey = getDayKey();
+        setInterval(async function() {
+          var newKey = getDayKey();
+          if (newKey !== currentDayKey) {
+            currentDayKey = newKey;
+            await loadEntries();
+            refresh();
+          }
+        }, 60000);
+
+      } catch (err) {
+        var msg = document.getElementById('loadingMsg');
+        if (msg) msg.innerHTML = '<span style="color:#e74c3c">Init error: ' + err.message + '</span>';
+        console.error('Init failed:', err);
+      }
+    }
+
+    init();
+  })();
   </script>
 </body>
 </html>

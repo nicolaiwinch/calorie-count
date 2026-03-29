@@ -16,25 +16,36 @@ class EntryOut(EntryIn):
     id: str
 
 
+ACTIVITY_MULTIPLIERS = {
+    "sedentary": 1.2,       # Desk job, no exercise
+    "light": 1.375,         # Light exercise 1-3 days/week
+    "moderate": 1.55,       # Exercise 3-5 days/week
+    "active": 1.725,        # Hard exercise 6-7 days/week
+    "very_active": 1.9,     # Athlete / physical job + exercise
+}
+
+
 class UserProfile(BaseModel):
     name: str
-    gender: str = ""         # "male" or "female"
+    gender: str = ""              # "male" or "female"
     age: int = 0
-    weight_kg: float = 0     # kilograms
-    height_cm: float = 0     # centimeters
-    daily_burn: int = 2200   # auto-calculated if profile is complete
+    weight_kg: float = 0          # kilograms
+    height_cm: float = 0          # centimeters
+    activity: str = "light"       # sedentary, light, moderate, active, very_active
+    daily_burn: int = 2200        # auto-calculated if profile is complete
     pin: str = ""
 
 
 def calculate_daily_burn(profile: dict) -> int:
     """
-    Mifflin-St Jeor equation × 1.2 sedentary multiplier.
+    Mifflin-St Jeor equation × activity multiplier.
     Returns calculated TDEE, or the manual daily_burn if profile is incomplete.
     """
     gender = profile.get("gender", "")
     age = profile.get("age", 0)
     weight = profile.get("weight_kg", 0)
     height = profile.get("height_cm", 0)
+    activity = profile.get("activity", "light")
 
     if not all([gender, age, weight, height]):
         return profile.get("daily_burn", 2200)
@@ -46,6 +57,7 @@ def calculate_daily_burn(profile: dict) -> int:
     else:
         bmr -= 161
 
-    # TDEE = BMR × sedentary multiplier
-    tdee = bmr * 1.2
+    # TDEE = BMR × activity multiplier
+    multiplier = ACTIVITY_MULTIPLIERS.get(activity, 1.375)
+    tdee = bmr * multiplier
     return round(tdee)

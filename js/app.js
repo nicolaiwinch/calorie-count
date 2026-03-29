@@ -72,8 +72,9 @@ async function handleCreateUser() {
   const height = parseFloat(document.getElementById('newUserHeight').value) || 0;
   const pin = document.getElementById('newUserPin').value.trim();
 
+  const activity = document.getElementById('newUserActivity').value;
   const userId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  await createUser(userId, { name, gender, age, weight_kg: weight, height_cm: height, pin });
+  await createUser(userId, { name, gender, age, weight_kg: weight, height_cm: height, activity, pin });
 
   document.getElementById('userPicker').classList.remove('active');
   document.getElementById('appMain').style.display = 'block';
@@ -91,16 +92,26 @@ function openProfile() {
   document.getElementById('profileAge').value = profile.age || '';
   document.getElementById('profileWeight').value = profile.weight_kg || '';
   document.getElementById('profileHeight').value = profile.height_cm || '';
+  document.getElementById('profileActivity').value = profile.activity || 'light';
 
   updateBurnDisplay();
   document.getElementById('profileOverlay').classList.add('active');
 }
+
+const ACTIVITY_MULTIPLIERS = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
 
 function updateBurnDisplay() {
   const gender = document.getElementById('profileGender').value;
   const age = parseInt(document.getElementById('profileAge').value) || 0;
   const weight = parseFloat(document.getElementById('profileWeight').value) || 0;
   const height = parseFloat(document.getElementById('profileHeight').value) || 0;
+  const activity = document.getElementById('profileActivity').value;
 
   const display = document.getElementById('profileBurnDisplay');
 
@@ -112,9 +123,10 @@ function updateBurnDisplay() {
 
   let bmr = 10 * weight + 6.25 * height - 5 * age;
   bmr += gender === 'male' ? 5 : -161;
-  const tdee = Math.round(bmr * 1.2);
+  const multiplier = ACTIVITY_MULTIPLIERS[activity] || 1.375;
+  const tdee = Math.round(bmr * multiplier);
 
-  display.textContent = `Daily burn: ${tdee} kcal (calculated)`;
+  display.textContent = `Daily burn: ${tdee} kcal (${activity.replace('_', ' ')})`;
   display.style.color = 'var(--color-green)';
 }
 
@@ -126,6 +138,7 @@ async function saveProfile() {
     age: parseInt(document.getElementById('profileAge').value) || 0,
     weight_kg: parseFloat(document.getElementById('profileWeight').value) || 0,
     height_cm: parseFloat(document.getElementById('profileHeight').value) || 0,
+    activity: document.getElementById('profileActivity').value,
     pin: getUserProfile()?.pin || '',
   };
 
@@ -159,7 +172,7 @@ async function init() {
   document.getElementById('profileSave').addEventListener('click', saveProfile);
 
   // Live calculation preview in profile modal
-  ['profileGender', 'profileAge', 'profileWeight', 'profileHeight'].forEach(id => {
+  ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(id => {
     document.getElementById(id).addEventListener('input', updateBurnDisplay);
     document.getElementById(id).addEventListener('change', updateBurnDisplay);
   });

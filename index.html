@@ -17,9 +17,10 @@
 <body>
 
   <!-- User Picker (shown on first launch or switch) -->
-  <div class="user-picker" id="userPicker">
+  <div class="user-picker active" id="userPicker">
     <div class="user-picker-inner">
       <h2 class="user-picker-title">Who's counting?</h2>
+      <div id="loadingMsg" style="text-align:center;opacity:0.4;padding:20px">Loading...</div>
       <div id="userList"></div>
       <div class="user-picker-divider">or create new</div>
       <input type="text" id="newUserName" placeholder="Name" class="user-picker-input" autocomplete="off">
@@ -144,6 +145,12 @@
 
   </div>
 
+  <script>
+    window.onerror = function(msg, url, line) {
+      document.getElementById('loadingMsg').innerHTML =
+        '<span style="color:#e74c3c">Error: ' + msg + '<br>' + url + ':' + line + '</span>';
+    };
+  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

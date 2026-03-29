@@ -37,9 +37,11 @@ async function showUserPicker() {
   app.style.display = 'none';
 
   const list = document.getElementById('userList');
+  const loadingMsg = document.getElementById('loadingMsg');
 
   try {
     const users = await listUsers();
+    if (loadingMsg) loadingMsg.style.display = 'none';
 
     if (users.length === 0) {
       list.innerHTML = '<div class="empty-log">No users yet — create one below</div>';
@@ -56,6 +58,7 @@ async function showUserPicker() {
       });
     }
   } catch (err) {
+    if (loadingMsg) loadingMsg.style.display = 'none';
     list.innerHTML = `<div class="empty-log" style="opacity:0.6">Cannot reach server.<br>Check your connection.<br><br><small style="opacity:0.5">${err.message}</small></div>`;
   }
 }
@@ -172,6 +175,7 @@ async function saveProfile() {
 // --- Init ---
 
 async function init() {
+  try {
   initModal(handleAdd);
 
   // Main buttons
@@ -231,6 +235,12 @@ async function init() {
     navigator.serviceWorker.getRegistrations().then(registrations => {
       registrations.forEach(r => r.unregister());
     });
+  }
+
+  } catch (err) {
+    const msg = document.getElementById('loadingMsg');
+    if (msg) msg.innerHTML = `<span style="color:#e74c3c">Init error: ${err.message}</span>`;
+    console.error('Init failed:', err);
   }
 }
 

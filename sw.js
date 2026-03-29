@@ -1,5 +1,20 @@
-const CACHE_NAME = 'calorie-v1';
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME = 'calorie-v2';
+const ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/css/colors.css',
+  '/css/main.css',
+  '/css/components.css',
+  '/js/app.js',
+  '/js/config.js',
+  '/js/state.js',
+  '/js/burn.js',
+  '/js/ui.js',
+  '/js/modal.js',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));

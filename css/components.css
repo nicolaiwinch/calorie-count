@@ -1,0 +1,155 @@
+/* Buttons */
+.btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-food {
+  background: var(--color-food);
+  color: white;
+}
+
+.btn-exercise {
+  background: var(--color-exercise);
+  color: var(--bg-primary);
+}
+
+/* Log entries */
+.log-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.log-entry-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-entry-name { font-size: 15px; }
+
+.log-entry-time {
+  font-size: 12px;
+  opacity: 0.4;
+  margin-top: 2px;
+}
+
+.log-entry-cal {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.log-entry-cal.food { color: var(--color-food); }
+.log-entry-cal.exercise { color: var(--color-exercise); }
+
+.log-entry-delete {
+  background: none;
+  border: none;
+  color: var(--text-ghost);
+  font-size: 20px;
+  padding: 0 0 0 12px;
+  cursor: pointer;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--bg-modal);
+  width: 100%;
+  max-width: 500px;
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.modal input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 16px;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.modal input:focus { border-color: var(--border-focus); }
+.modal input::placeholder { color: var(--text-faint); }
+
+.quick-picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.quick-pick {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-chip);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal-btn-cancel {
+  background: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.modal-btn-add {
+  background: var(--color-exercise);
+  color: var(--bg-primary);
+}
+
+.modal-btn-add.food-mode {
+  background: var(--color-food);
+  color: white;
+}

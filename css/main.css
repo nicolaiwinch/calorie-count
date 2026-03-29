@@ -37,6 +37,13 @@ body {
   margin-top: 4px;
 }
 
+.forecast {
+  font-size: 13px;
+  opacity: 0.4;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+}
+
 .stats-row {
   display: flex;
   justify-content: space-around;

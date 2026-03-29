@@ -1,5 +1,5 @@
 import { GREEN_THRESHOLD } from './config.js';
-import { getEntries, getTotals, getCurrentUser } from './state.js';
+import { getEntries, getTotals, getCurrentUser, getDailyBurn } from './state.js';
 import { getBurnedSoFar } from './burn.js';
 
 function escapeHtml(text) {
@@ -23,6 +23,13 @@ export function updateDisplay() {
     el.classList.add('color-yellow');
   } else {
     el.classList.add('color-green');
+  }
+
+  // Forecast: what available will be at midnight if no more eating
+  const forecast = getDailyBurn() - eaten + exercise;
+  const forecastEl = document.getElementById('forecastCalories');
+  if (forecastEl) {
+    forecastEl.textContent = `${forecast} by midnight`;
   }
 
   document.getElementById('burnedStat').textContent = Math.round(burned);

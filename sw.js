@@ -1,38 +1,21 @@
-const CACHE_NAME = 'calorie-v4';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/colors.css',
-  '/css/main.css',
-  '/css/components.css',
-  '/js/app.js',
-  '/js/api.js',
-  '/js/config.js',
-  '/js/state.js',
-  '/js/burn.js',
-  '/js/ui.js',
-  '/js/modal.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-];
+// Service worker that doesn't cache — ensures fresh content always
+// We'll add smart caching later when the app is more stable
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
+  // Delete all old caches
   e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request))
-  );
+  // Always go to network, no caching
+  e.respondWith(fetch(e.request));
 });

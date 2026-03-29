@@ -17,11 +17,11 @@ class EntryOut(EntryIn):
 
 
 ACTIVITY_MULTIPLIERS = {
-    "sedentary": 1.2,       # Desk job, mostly sitting
-    "light": 1.375,         # Some walking, light chores
-    "moderate": 1.55,       # On your feet at work
-    "active": 1.725,        # Physical job, lots of walking
-    "very_active": 1.9,     # Heavy physical labor
+    "sedentary": 1.2,       # <4k steps/day avg — desk job, drive everywhere
+    "light": 1.3,           # 4-7k steps/day avg — some walking, errands
+    "moderate": 1.4,        # 7-10k steps/day avg — on your feet at work
+    "active": 1.5,          # 10-15k steps/day avg — physical job
+    "very_active": 1.6,     # 15k+ steps/day avg — heavy physical labor
 }
 
 

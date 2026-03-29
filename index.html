@@ -35,11 +35,11 @@
         <input type="number" id="newUserHeight" placeholder="Height (cm)" class="user-picker-input" inputmode="numeric">
       </div>
       <select id="newUserActivity" class="user-picker-input">
-        <option value="sedentary">Sedentary (desk job, mostly sitting)</option>
-        <option value="light" selected>Lightly active (some walking, light chores)</option>
-        <option value="moderate">Moderately active (on your feet at work)</option>
-        <option value="active">Active (physical job, lots of walking)</option>
-        <option value="very_active">Very active (heavy physical labor)</option>
+        <option value="sedentary">Sedentary — avg &lt; 4k steps/day</option>
+        <option value="light" selected>Lightly active — avg 4-7k steps/day</option>
+        <option value="moderate">Moderately active — avg 7-10k steps/day</option>
+        <option value="active">Active — avg 10-15k steps/day</option>
+        <option value="very_active">Very active — avg 15k+ steps/day</option>
       </select>
       <input type="text" id="newUserPin" placeholder="PIN (optional)" class="user-picker-input" inputmode="numeric">
       <button class="btn btn-exercise" id="btnCreateUser" style="width:100%">Create</button>
@@ -112,11 +112,11 @@
           <input type="number" id="profileHeight" placeholder="Height (cm)" inputmode="numeric">
         </div>
         <select id="profileActivity" class="modal-select" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
-          <option value="sedentary">Sedentary (desk job, mostly sitting)</option>
-          <option value="light">Lightly active (some walking, light chores)</option>
-          <option value="moderate">Moderately active (on your feet at work)</option>
-          <option value="active">Active (physical job, lots of walking)</option>
-          <option value="very_active">Very active (heavy physical labor)</option>
+          <option value="sedentary">Sedentary — avg &lt; 4k steps/day</option>
+          <option value="light">Lightly active — avg 4-7k steps/day</option>
+          <option value="moderate">Moderately active — avg 7-10k steps/day</option>
+          <option value="active">Active — avg 10-15k steps/day</option>
+          <option value="very_active">Very active — avg 15k+ steps/day</option>
         </select>
         <div class="profile-burn-display" id="profileBurnDisplay"></div>
         <div class="modal-actions">

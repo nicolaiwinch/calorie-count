@@ -226,9 +226,11 @@ async function init() {
     }
   }, 60000);
 
-  // Service worker
+  // Unregister any old service workers
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(r => r.unregister());
+    });
   }
 }
 

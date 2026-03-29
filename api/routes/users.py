@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
 from config import STORAGE
-from models import UserProfile
+from models import UserProfile, calculate_daily_burn
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -21,5 +21,7 @@ def get_user(user_id: str) -> dict:
 
 @router.put("/{user_id}")
 def save_user(user_id: str, profile: UserProfile) -> dict:
-    saved = STORAGE.save_user(user_id, profile.model_dump())
+    data = profile.model_dump()
+    data["daily_burn"] = calculate_daily_burn(data)
+    saved = STORAGE.save_user(user_id, data)
     return {"id": user_id, **saved}

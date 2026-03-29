@@ -22,6 +22,18 @@
       <div id="userList"></div>
       <div class="user-picker-divider">or create new</div>
       <input type="text" id="newUserName" placeholder="Name" class="user-picker-input" autocomplete="off">
+      <div class="picker-row">
+        <select id="newUserGender" class="user-picker-input">
+          <option value="" disabled selected>Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <input type="number" id="newUserAge" placeholder="Age" class="user-picker-input" inputmode="numeric">
+      </div>
+      <div class="picker-row">
+        <input type="number" id="newUserWeight" placeholder="Weight (kg)" class="user-picker-input" inputmode="decimal">
+        <input type="number" id="newUserHeight" placeholder="Height (cm)" class="user-picker-input" inputmode="numeric">
+      </div>
       <input type="text" id="newUserPin" placeholder="PIN (optional)" class="user-picker-input" inputmode="numeric">
       <button class="btn btn-exercise" id="btnCreateUser" style="width:100%">Create</button>
     </div>
@@ -32,6 +44,7 @@
 
     <button class="reset-btn" id="btnReset">Reset</button>
     <button class="switch-user-btn" id="btnSwitchUser"><span id="currentUserLabel"></span> ▾</button>
+    <button class="profile-btn" id="btnProfile">Profile</button>
 
     <div class="header">
       <div class="available-label">Available Calories</div>
@@ -72,6 +85,31 @@
     <div class="log-section">
       <div class="log-title">Today's Log</div>
       <div id="logEntries"></div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileOverlay">
+      <div class="modal">
+        <div class="modal-title">Profile</div>
+        <input type="text" id="profileName" placeholder="Name" autocomplete="off">
+        <div class="picker-row">
+          <select id="profileGender" class="modal-select">
+            <option value="" disabled>Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+          <input type="number" id="profileAge" placeholder="Age" inputmode="numeric">
+        </div>
+        <div class="picker-row">
+          <input type="number" id="profileWeight" placeholder="Weight (kg)" inputmode="decimal">
+          <input type="number" id="profileHeight" placeholder="Height (cm)" inputmode="numeric">
+        </div>
+        <div class="profile-burn-display" id="profileBurnDisplay"></div>
+        <div class="modal-actions">
+          <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
+          <button class="modal-btn modal-btn-add" id="profileSave">Save</button>
+        </div>
+      </div>
     </div>
 
     <!-- Modal -->

@@ -1,7 +1,7 @@
 import {
   loadEntries, addEntryToState, deleteEntryFromState,
-  clearEntries, getDayKey, getCurrentUser, setCurrentUser,
-  listUsers, createUser
+  clearEntries, getDayKey, getCurrentUser, getUserProfile,
+  setCurrentUser, listUsers, createUser, updateUser
 } from './state.js';
 import { updateDisplay, renderLog } from './ui.js';
 import { initModal, open as openModal } from './modal.js';
@@ -42,9 +42,10 @@ async function showUserPicker() {
   if (users.length === 0) {
     list.innerHTML = '<div class="empty-log">No users yet — create one below</div>';
   } else {
-    list.innerHTML = users.map(u => `
-      <button class="user-pick-btn" data-id="${u.id}">${u.name}</button>
-    `).join('');
+    list.innerHTML = users.map(u => {
+      const detail = u.daily_burn ? `${u.daily_burn} kcal/day` : '';
+      return `<button class="user-pick-btn" data-id="${u.id}">${u.name} <span style="opacity:0.4;font-size:13px;float:right">${detail}</span></button>`;
+    }).join('');
 
     list.querySelectorAll('.user-pick-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -63,14 +64,73 @@ async function selectUser(userId) {
 
 async function handleCreateUser() {
   const name = document.getElementById('newUserName').value.trim();
-  const pin = document.getElementById('newUserPin').value.trim();
   if (!name) return;
 
+  const gender = document.getElementById('newUserGender').value;
+  const age = parseInt(document.getElementById('newUserAge').value) || 0;
+  const weight = parseFloat(document.getElementById('newUserWeight').value) || 0;
+  const height = parseFloat(document.getElementById('newUserHeight').value) || 0;
+  const pin = document.getElementById('newUserPin').value.trim();
+
   const userId = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  await createUser(userId, { name, daily_burn: 2200, pin });
+  await createUser(userId, { name, gender, age, weight_kg: weight, height_cm: height, pin });
 
   document.getElementById('userPicker').classList.remove('active');
   document.getElementById('appMain').style.display = 'block';
+  refresh();
+}
+
+// --- Profile ---
+
+function openProfile() {
+  const profile = getUserProfile();
+  if (!profile) return;
+
+  document.getElementById('profileName').value = profile.name || '';
+  document.getElementById('profileGender').value = profile.gender || '';
+  document.getElementById('profileAge').value = profile.age || '';
+  document.getElementById('profileWeight').value = profile.weight_kg || '';
+  document.getElementById('profileHeight').value = profile.height_cm || '';
+
+  updateBurnDisplay();
+  document.getElementById('profileOverlay').classList.add('active');
+}
+
+function updateBurnDisplay() {
+  const gender = document.getElementById('profileGender').value;
+  const age = parseInt(document.getElementById('profileAge').value) || 0;
+  const weight = parseFloat(document.getElementById('profileWeight').value) || 0;
+  const height = parseFloat(document.getElementById('profileHeight').value) || 0;
+
+  const display = document.getElementById('profileBurnDisplay');
+
+  if (!gender || !age || !weight || !height) {
+    display.textContent = 'Fill in all fields to calculate daily burn';
+    display.style.color = 'var(--text-muted)';
+    return;
+  }
+
+  let bmr = 10 * weight + 6.25 * height - 5 * age;
+  bmr += gender === 'male' ? 5 : -161;
+  const tdee = Math.round(bmr * 1.2);
+
+  display.textContent = `Daily burn: ${tdee} kcal (calculated)`;
+  display.style.color = 'var(--color-green)';
+}
+
+async function saveProfile() {
+  const userId = getCurrentUser();
+  const profile = {
+    name: document.getElementById('profileName').value.trim(),
+    gender: document.getElementById('profileGender').value,
+    age: parseInt(document.getElementById('profileAge').value) || 0,
+    weight_kg: parseFloat(document.getElementById('profileWeight').value) || 0,
+    height_cm: parseFloat(document.getElementById('profileHeight').value) || 0,
+    pin: getUserProfile()?.pin || '',
+  };
+
+  await updateUser(userId, profile);
+  document.getElementById('profileOverlay').classList.remove('active');
   refresh();
 }
 
@@ -79,11 +139,30 @@ async function handleCreateUser() {
 async function init() {
   initModal(handleAdd);
 
+  // Main buttons
   document.getElementById('btnFood').addEventListener('click', () => openModal('food'));
   document.getElementById('btnExercise').addEventListener('click', () => openModal('exercise'));
   document.getElementById('btnReset').addEventListener('click', resetDay);
   document.getElementById('btnSwitchUser').addEventListener('click', showUserPicker);
   document.getElementById('btnCreateUser').addEventListener('click', handleCreateUser);
+
+  // Profile
+  document.getElementById('btnProfile').addEventListener('click', openProfile);
+  document.getElementById('profileCancel').addEventListener('click', () => {
+    document.getElementById('profileOverlay').classList.remove('active');
+  });
+  document.getElementById('profileOverlay').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('profileOverlay')) {
+      document.getElementById('profileOverlay').classList.remove('active');
+    }
+  });
+  document.getElementById('profileSave').addEventListener('click', saveProfile);
+
+  // Live calculation preview in profile modal
+  ['profileGender', 'profileAge', 'profileWeight', 'profileHeight'].forEach(id => {
+    document.getElementById(id).addEventListener('input', updateBurnDisplay);
+    document.getElementById(id).addEventListener('change', updateBurnDisplay);
+  });
 
   // If we have a remembered user, try to load them
   const savedUser = getCurrentUser();

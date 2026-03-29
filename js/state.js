@@ -57,6 +57,10 @@ export async function createUser(userId, profile) {
   return setCurrentUser(userId);
 }
 
+export async function updateUser(userId, profile) {
+  userProfile = await api.saveUser(userId, profile);
+}
+
 // --- Entries ---
 
 export function getEntries() {

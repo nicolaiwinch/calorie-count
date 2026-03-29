@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calorie-v3';
+const CACHE_NAME = 'calorie-v4';
 const ASSETS = [
   '/',
   '/index.html',

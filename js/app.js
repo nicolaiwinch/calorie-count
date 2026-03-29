@@ -36,22 +36,27 @@ async function showUserPicker() {
   picker.classList.add('active');
   app.style.display = 'none';
 
-  const users = await listUsers();
   const list = document.getElementById('userList');
 
-  if (users.length === 0) {
-    list.innerHTML = '<div class="empty-log">No users yet — create one below</div>';
-  } else {
-    list.innerHTML = users.map(u => {
-      const detail = u.daily_burn ? `${u.daily_burn} kcal/day` : '';
-      return `<button class="user-pick-btn" data-id="${u.id}">${u.name} <span style="opacity:0.4;font-size:13px;float:right">${detail}</span></button>`;
-    }).join('');
+  try {
+    const users = await listUsers();
 
-    list.querySelectorAll('.user-pick-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await selectUser(btn.dataset.id);
+    if (users.length === 0) {
+      list.innerHTML = '<div class="empty-log">No users yet — create one below</div>';
+    } else {
+      list.innerHTML = users.map(u => {
+        const detail = u.daily_burn ? `${u.daily_burn} kcal/day` : '';
+        return `<button class="user-pick-btn" data-id="${u.id}">${u.name} <span style="opacity:0.4;font-size:13px;float:right">${detail}</span></button>`;
+      }).join('');
+
+      list.querySelectorAll('.user-pick-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          await selectUser(btn.dataset.id);
+        });
       });
-    });
+    }
+  } catch (err) {
+    list.innerHTML = `<div class="empty-log" style="opacity:0.6">Cannot reach server.<br>Check your connection.<br><br><small style="opacity:0.5">${err.message}</small></div>`;
   }
 }
 
@@ -201,10 +206,10 @@ async function init() {
       await setCurrentUser(savedUser);
       refresh();
     } catch {
-      showUserPicker();
+      await showUserPicker();
     }
   } else {
-    showUserPicker();
+    await showUserPicker();
   }
 
   // Live counter

@@ -11,7 +11,11 @@ from storage import JsonStorage
 # Swap this line to change backend:
 #   from storage import SqliteStorage
 #   STORAGE = SqliteStorage("calories.db")
-STORAGE = JsonStorage(data_dir="data")
+import os
+
+# Use /data (persistent volume) on Railway, local "data" dir for development
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+STORAGE = JsonStorage(data_dir=DATA_DIR)
 
 # --- Calorie defaults ---
 DEFAULT_DAILY_BURN = 2200

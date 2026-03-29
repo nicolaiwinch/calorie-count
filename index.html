@@ -150,6 +150,17 @@
       document.getElementById('loadingMsg').innerHTML =
         '<span style="color:#e74c3c">Error: ' + msg + '<br>' + url + ':' + line + '</span>';
     };
+    // Kill any old service workers immediately
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        regs.forEach(function(r) { r.unregister(); });
+        if (regs.length > 0) {
+          // Service worker was found and killed — reload to get fresh files
+          document.getElementById('loadingMsg').textContent = 'Updating app...';
+          setTimeout(function() { location.reload(); }, 1000);
+        }
+      });
+    }
     // Test: if this runs, basic JS works
     document.getElementById('loadingMsg').textContent = 'JS works, loading modules...';
   </script>

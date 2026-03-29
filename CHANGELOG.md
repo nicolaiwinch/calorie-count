@@ -24,8 +24,8 @@ iPhone/Browser                GitHub Pages              Railway
 
 ## Users
 
-- **nicolai** — daily burn 2200 kcal
-- **partner** — daily burn 1800 kcal (placeholder name)
+- **nicolai** — auto-calculated daily burn from profile
+- **partner** — placeholder name, update via Profile screen
 
 ---
 
@@ -62,6 +62,14 @@ iPhone/Browser                GitHub Pages              Railway
 - CORS enabled for cross-origin frontend→API calls
 - Deployed backend to Railway (always-on, no cold starts)
 - Created two user profiles (nicolai, partner)
+
+### v0.4 — User profiles with auto-calculated burn rate
+- Profile fields: gender, age, weight (kg), height (cm)
+- Mifflin-St Jeor equation calculates BMR, × 1.2 for sedentary TDEE
+- Profile modal accessible from main screen with live calculation preview
+- User picker now collects profile data on creation
+- Backend auto-calculates daily_burn when profile is saved
+- Each user gets a personalized burn rate (e.g. 35yo male 85kg 182cm → 2181 kcal/day)
 
 ---
 

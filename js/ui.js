@@ -1,5 +1,5 @@
 import { GREEN_THRESHOLD } from './config.js';
-import { getEntries, getTotals } from './state.js';
+import { getEntries, getTotals, getCurrentUser } from './state.js';
 import { getBurnedSoFar } from './burn.js';
 
 function escapeHtml(text) {
@@ -32,6 +32,12 @@ export function updateDisplay() {
   const pct = Math.round(fraction * 100);
   document.getElementById('burnBarFill').style.width = pct + '%';
   document.getElementById('burnBarPct').textContent = pct + '%';
+
+  // Show current user
+  const userLabel = document.getElementById('currentUserLabel');
+  if (userLabel) {
+    userLabel.textContent = getCurrentUser() || 'No user';
+  }
 }
 
 export function renderLog(onDelete) {
@@ -44,8 +50,7 @@ export function renderLog(onDelete) {
   }
 
   const sorted = [...entries].reverse();
-  container.innerHTML = sorted.map((e, i) => {
-    const realIndex = entries.length - 1 - i;
+  container.innerHTML = sorted.map(e => {
     const sign = e.type === 'food' ? '-' : '+';
     const cls = e.type === 'food' ? 'food' : 'exercise';
     const time = new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -57,7 +62,7 @@ export function renderLog(onDelete) {
         </div>
         <div style="display:flex;align-items:center">
           <div class="log-entry-cal ${cls}">${sign}${e.cal}</div>
-          <button class="log-entry-delete" data-index="${realIndex}">×</button>
+          <button class="log-entry-delete" data-id="${e.id}">×</button>
         </div>
       </div>
     `;
@@ -65,7 +70,7 @@ export function renderLog(onDelete) {
 
   container.querySelectorAll('.log-entry-delete').forEach(btn => {
     btn.addEventListener('click', () => {
-      onDelete(parseInt(btn.dataset.index));
+      onDelete(btn.dataset.id);
     });
   });
 }

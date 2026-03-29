@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calorie-v2';
+const CACHE_NAME = 'calorie-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -7,6 +7,7 @@ const ASSETS = [
   '/css/main.css',
   '/css/components.css',
   '/js/app.js',
+  '/js/api.js',
   '/js/config.js',
   '/js/state.js',
   '/js/burn.js',

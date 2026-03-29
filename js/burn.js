@@ -1,4 +1,4 @@
-import { DAILY_BURN } from './config.js';
+import { getDailyBurn } from './state.js';
 import { getDayStart } from './state.js';
 
 export function getBurnedSoFar() {
@@ -12,7 +12,7 @@ export function getBurnedSoFar() {
   const fraction = Math.min(elapsed / total, 1);
 
   return {
-    burned: Math.floor(DAILY_BURN * fraction),
+    burned: Math.floor(getDailyBurn() * fraction),
     fraction,
   };
 }

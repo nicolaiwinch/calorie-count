@@ -1,6 +1,17 @@
+/**
+ * State management — bridges the API with the UI.
+ * Keeps a local copy of entries for fast rendering,
+ * syncs with the backend on every change.
+ */
+
 import { DAY_START_HOUR } from './config.js';
+import * as api from './api.js';
 
 let entries = [];
+let currentUser = localStorage.getItem('current_user') || null;
+let userProfile = null;
+
+// --- Day helpers ---
 
 export function getDayStart() {
   const now = new Date();
@@ -16,38 +27,75 @@ export function getDayKey() {
   return getDayStart().toISOString().slice(0, 10);
 }
 
+// --- User ---
+
+export function getCurrentUser() {
+  return currentUser;
+}
+
+export function getUserProfile() {
+  return userProfile;
+}
+
+export function getDailyBurn() {
+  return userProfile?.daily_burn || 2200;
+}
+
+export async function setCurrentUser(userId) {
+  currentUser = userId;
+  localStorage.setItem('current_user', userId);
+  userProfile = await api.getUser(userId);
+  await loadEntries();
+}
+
+export async function listUsers() {
+  return api.listUsers();
+}
+
+export async function createUser(userId, profile) {
+  await api.saveUser(userId, profile);
+  return setCurrentUser(userId);
+}
+
+// --- Entries ---
+
 export function getEntries() {
   return entries;
 }
 
-export function loadEntries() {
-  const key = 'cal_' + getDayKey();
-  entries = JSON.parse(localStorage.getItem(key) || '[]');
+export async function loadEntries() {
+  if (!currentUser) {
+    entries = [];
+    return;
+  }
+  try {
+    entries = await api.getEntries(currentUser, getDayKey());
+  } catch {
+    entries = [];
+  }
 }
 
-export function saveEntries() {
-  const key = 'cal_' + getDayKey();
-  localStorage.setItem(key, JSON.stringify(entries));
-}
-
-export function addEntryToState(type, name, cal) {
-  entries.push({
+export async function addEntryToState(type, name, cal) {
+  const entry = {
     type,
     name,
     cal,
     time: new Date().toISOString(),
-  });
-  saveEntries();
+  };
+  const saved = await api.addEntry(currentUser, entry);
+  entries.push(saved);
 }
 
-export function deleteEntryFromState(index) {
-  entries.splice(index, 1);
-  saveEntries();
+export async function deleteEntryFromState(entryId) {
+  await api.deleteEntry(currentUser, getDayKey(), entryId);
+  entries = entries.filter(e => e.id !== entryId);
 }
 
-export function clearEntries() {
+export async function clearEntries() {
+  // Delete all entries one by one
+  const day = getDayKey();
+  await Promise.all(entries.map(e => api.deleteEntry(currentUser, day, e.id)));
   entries = [];
-  saveEntries();
 }
 
 export function getTotals() {

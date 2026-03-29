@@ -1,6 +1,8 @@
-export const DAILY_BURN = 2200;
 export const DAY_START_HOUR = 0; // Midnight
 export const GREEN_THRESHOLD = 600;
+
+// API base URL — change this when deploying
+export const API_URL = localStorage.getItem('api_url') || 'https://calorie-counter-api-production.up.railway.app';
 
 export const FOOD_QUICK_PICKS = [
   { name: 'Coffee w/ milk', cal: 50 },

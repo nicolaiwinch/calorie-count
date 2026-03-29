@@ -153,3 +153,76 @@
   background: var(--color-food);
   color: white;
 }
+
+/* User picker */
+.user-picker {
+  display: none;
+  min-height: 100vh;
+  padding: 80px 20px 40px;
+}
+
+.user-picker.active { display: block; }
+
+.user-picker-inner {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.user-picker-title {
+  font-size: 24px;
+  font-weight: 300;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.user-pick-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  margin-bottom: 8px;
+  background: var(--bg-card);
+  border: none;
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 18px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-picker-divider {
+  text-align: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.4;
+  margin: 24px 0 16px;
+}
+
+.user-picker-input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 16px;
+  margin-bottom: 12px;
+  outline: none;
+}
+
+.user-picker-input:focus { border-color: var(--border-focus); }
+.user-picker-input::placeholder { color: var(--text-faint); }
+
+/* Switch user button */
+.switch-user-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px;
+  z-index: 10;
+}

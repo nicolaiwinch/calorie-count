@@ -386,6 +386,10 @@ select.user-picker-input {
   opacity: 0.5;
 }
 
+.day-card-red {
+  border-left-color: var(--color-red);
+}
+
 .day-card-yellow {
   border-left-color: var(--color-yellow);
 }

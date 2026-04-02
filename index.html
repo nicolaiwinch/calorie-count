@@ -885,19 +885,11 @@
       var activeDay = viewingDate || getDayKey();
       var viewingToday = activeDay === getDayKey();
       var isConfirmed = confirmedDays.indexOf(activeDay) !== -1;
-      var entryCount = historyEntries.length;
+      var isTrackedDay = historyEntries.length > 0 && (eaten >= LOW_TRACK_THRESHOLD || isConfirmed);
 
-      if (historyPeriod === 'day' && !viewingToday && !isConfirmed) {
-        if (entryCount === 0) {
-          netEl.style.color = 'var(--text-ghost)';
-        } else if (eaten < LOW_TRACK_THRESHOLD) {
-          netEl.style.color = 'var(--color-yellow)';
-        } else {
-          netEl.style.color = '';
-          if (net < 0) netEl.classList.add('color-red');
-          else if (net < GREEN_THRESHOLD) netEl.classList.add('color-yellow');
-          else netEl.classList.add('color-green');
-        }
+      if (historyPeriod === 'day' && !viewingToday && !isTrackedDay) {
+        // Grey for untracked/incomplete past days
+        netEl.style.color = 'var(--text-ghost)';
       } else {
         netEl.style.color = '';
         if (net < 0) netEl.classList.add('color-red');
@@ -962,24 +954,40 @@
         var isConfirmed = confirmedDays.indexOf(day) !== -1;
         var isToday = day === getDayKey();
 
+        var dayExercise = 0;
+        dayEntries.forEach(function(e) { if (e.type !== 'food') dayExercise += e.cal; });
+        var dayNet = getDailyBurn() - dayEaten + dayExercise;
+        var isTracked = dayEntries.length > 0 && (dayEaten >= LOW_TRACK_THRESHOLD || isConfirmed);
+
         var status, statusClass;
         if (isToday) {
           status = 'today';
           statusClass = 'day-card-today';
-        } else if (dayEntries.length === 0) {
-          status = 'empty';
+        } else if (!isTracked) {
+          // No entries or below threshold and not confirmed = grey
+          status = dayEntries.length === 0 ? 'empty' : 'low';
           statusClass = 'day-card-grey';
-        } else if (dayEaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
-          status = 'low';
+        } else if (dayNet < 0) {
+          status = 'tracked';
+          statusClass = 'day-card-red';
+        } else if (dayNet < GREEN_THRESHOLD) {
+          status = 'tracked';
           statusClass = 'day-card-yellow';
         } else {
-          status = 'ok';
+          status = 'tracked';
           statusClass = 'day-card-ok';
         }
 
         var d = new Date(day + 'T12:00:00');
         var label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-        var kcalText = dayEntries.length === 0 ? 'No entries' : dayEaten + ' kcal eaten';
+        var kcalText;
+        if (dayEntries.length === 0) {
+          kcalText = 'No entries';
+        } else if (isTracked) {
+          kcalText = (dayNet >= 0 ? '+' : '') + dayNet + ' net';
+        } else {
+          kcalText = dayEaten + ' kcal eaten';
+        }
 
         var html = '<div class="day-card ' + statusClass + '" data-day="' + day + '">';
         html += '<div class="day-card-info">';
@@ -990,7 +998,7 @@
         if (status === 'low') {
           html += '<button class="day-card-ok-btn" data-day="' + day + '">OK?</button>';
         }
-        if (isConfirmed && dayEaten < LOW_TRACK_THRESHOLD && dayEntries.length > 0) {
+        if (isConfirmed) {
           html += '<button class="day-card-undo-btn" data-day="' + day + '">\u2713</button>';
         }
         if (!isToday) {

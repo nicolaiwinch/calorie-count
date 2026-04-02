@@ -35,3 +35,11 @@ class StorageBackend(ABC):
     @abstractmethod
     def list_users(self) -> list[dict]:
         """List all user profiles."""
+
+    @abstractmethod
+    def list_entry_dates(self, user_id: str) -> list[str]:
+        """List all dates (YYYY-MM-DD) that have entries for a user, newest first."""
+
+    @abstractmethod
+    def get_entries_range(self, user_id: str, start: date, end: date) -> list[dict]:
+        """Get all entries for a user between start and end dates (inclusive)."""

@@ -97,6 +97,61 @@
       <div id="logEntries"></div>
     </div>
 
+    <div class="history-link-container">
+      <button class="history-link-btn" id="btnHistory">History</button>
+    </div>
+
+    <!-- History View -->
+    <div id="historyView" style="display:none">
+      <div class="history-header">
+        <button class="history-back-btn" id="btnHistoryBack">Today</button>
+        <div class="history-period-tabs">
+          <button class="period-tab active" data-period="day">Day</button>
+          <button class="period-tab" data-period="week">Week</button>
+          <button class="period-tab" data-period="month">Month</button>
+          <button class="period-tab" data-period="all">All</button>
+        </div>
+      </div>
+
+      <div class="history-nav-row" id="historyNavRow">
+        <button class="history-nav-btn" id="btnPrevPeriod">&lsaquo;</button>
+        <div class="history-date-label" id="historyDateLabel"></div>
+        <button class="history-nav-btn" id="btnNextPeriod">&rsaquo;</button>
+      </div>
+
+      <div class="header" style="padding-top:10px">
+        <div class="available-label">Net Calories</div>
+        <div class="available-calories" id="historyNetCalories">0</div>
+        <div class="available-unit">kcal</div>
+        <div class="forecast" id="historySummaryLine"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat">
+          <div class="stat-value" id="historyBurnStat">0</div>
+          <div class="stat-label">Daily Burn</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="historyEatenStat">0</div>
+          <div class="stat-label">Eaten</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="historyExerciseStat">0</div>
+          <div class="stat-label">Exercise</div>
+        </div>
+      </div>
+
+      <div class="actions" id="historyActions">
+        <button class="btn btn-food" id="btnHistoryFood">+ Food</button>
+        <button class="btn btn-exercise" id="btnHistoryExercise">+ Exercise</button>
+      </div>
+
+      <div class="log-section">
+        <div class="log-title" id="historyLogTitle">Entries</div>
+        <div id="historyLogEntries"></div>
+      </div>
+    </div>
+
     <!-- Profile Modal -->
     <div class="modal-overlay" id="profileOverlay">
       <div class="modal">
@@ -209,6 +264,10 @@
     function apiDeleteEntry(userId, date, entryId) {
       return apiRequest('/api/entries/' + userId + '/' + date + '/' + entryId, { method: 'DELETE' });
     }
+    function apiListDates(userId) { return apiRequest('/api/entries/' + userId + '/dates'); }
+    function apiGetEntriesRange(userId, start, end) {
+      return apiRequest('/api/entries/' + userId + '/range/' + start + '/' + end);
+    }
 
     // ===== state =====
     var entries = [];
@@ -232,32 +291,41 @@
     function getDailyBurn() { return (userProfile && userProfile.daily_burn) ? userProfile.daily_burn : 2200; }
     function getEntries() { return entries; }
 
+    var viewingDate = null; // null = today, else 'YYYY-MM-DD'
+
+    function getActiveDate() { return viewingDate || getDayKey(); }
+    function isViewingToday() { return !viewingDate || viewingDate === getDayKey(); }
+
     async function setCurrentUser(userId) {
       currentUser = userId;
       localStorage.setItem('current_user', userId);
+      entries = [];
+      userProfile = null;
       userProfile = await apiGetUser(userId);
       await loadEntries();
     }
 
     async function loadEntries() {
       if (!currentUser) { entries = []; return; }
-      try { entries = await apiGetEntries(currentUser, getDayKey()); }
+      try { entries = await apiGetEntries(currentUser, getActiveDate()); }
       catch(e) { entries = []; }
     }
 
     async function addEntryToState(type, name, cal) {
-      var entry = { type: type, name: name, cal: cal, time: new Date().toISOString() };
+      var date = getActiveDate();
+      var time = isViewingToday() ? new Date().toISOString() : date + 'T12:00:00';
+      var entry = { type: type, name: name, cal: cal, time: time };
       var saved = await apiAddEntry(currentUser, entry);
       entries.push(saved);
     }
 
     async function deleteEntryFromState(entryId) {
-      await apiDeleteEntry(currentUser, getDayKey(), entryId);
+      await apiDeleteEntry(currentUser, getActiveDate(), entryId);
       entries = entries.filter(function(e) { return e.id !== entryId; });
     }
 
     async function clearAllEntries() {
-      var day = getDayKey();
+      var day = getActiveDate();
       await Promise.all(entries.map(function(e) { return apiDeleteEntry(currentUser, day, e.id); }));
       entries = [];
     }
@@ -403,7 +471,12 @@
 
     async function handleAdd(type, name, cal) {
       await addEntryToState(type, name, cal);
-      refresh();
+      if (document.getElementById('historyView').style.display !== 'none') {
+        historyEntries = entries;
+        updateHistoryDisplay();
+      } else {
+        refresh();
+      }
     }
 
     async function resetDay() {
@@ -525,6 +598,208 @@
       refresh();
     }
 
+    // --- History ---
+    var historyPeriod = 'day'; // day, week, month, all
+    var historyEntries = [];
+    var todaySections = null; // cached NodeList of today-only sections
+
+    function getTodaySections() {
+      if (!todaySections) {
+        var app = document.getElementById('appMain');
+        todaySections = app.querySelectorAll(':scope > .header, :scope > .stats-row, :scope > .burn-bar-container, :scope > .actions, :scope > .log-section, :scope > .history-link-container');
+      }
+      return todaySections;
+    }
+
+    function formatDateLabel(dateStr) {
+      var d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    function formatPeriodLabel(dateStr, period) {
+      if (period === 'day') return formatDateLabel(dateStr);
+      var range = getPeriodRange(dateStr, period);
+      if (period === 'all') return 'All Time';
+      var s = new Date(range.start + 'T12:00:00');
+      var e = new Date(range.end + 'T12:00:00');
+      if (period === 'week') {
+        return s.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' \u2013 ' +
+               e.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+      return s.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function dateAdd(dateStr, days) {
+      var d = new Date(dateStr + 'T12:00:00');
+      d.setDate(d.getDate() + days);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+
+    function getPeriodRange(dateStr, period) {
+      if (period === 'day') return { start: dateStr, end: dateStr };
+      if (period === 'all') return { start: '2020-01-01', end: getDayKey() };
+      var d = new Date(dateStr + 'T12:00:00');
+      if (period === 'week') {
+        var dayOfWeek = d.getDay();
+        var monday = new Date(d);
+        monday.setDate(d.getDate() - ((dayOfWeek + 6) % 7));
+        var sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        var fmt = function(dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
+        return { start: fmt(monday), end: fmt(sunday) };
+      }
+      // month
+      var first = new Date(d.getFullYear(), d.getMonth(), 1);
+      var last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      var fmt2 = function(dt) { return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); };
+      return { start: fmt2(first), end: fmt2(last) };
+    }
+
+    function navigatePeriod(offset) {
+      var d = viewingDate || getDayKey();
+      if (historyPeriod === 'day') {
+        d = dateAdd(d, offset);
+      } else if (historyPeriod === 'week') {
+        d = dateAdd(d, offset * 7);
+      } else if (historyPeriod === 'month') {
+        var dt = new Date(d + 'T12:00:00');
+        dt.setMonth(dt.getMonth() + offset);
+        d = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+      }
+      // Don't navigate into the future
+      if (d > getDayKey()) d = getDayKey();
+      viewingDate = d;
+      loadHistoryView();
+    }
+
+    async function loadHistoryView() {
+      var range = getPeriodRange(viewingDate || getDayKey(), historyPeriod);
+      document.getElementById('historyDateLabel').textContent = formatPeriodLabel(viewingDate || getDayKey(), historyPeriod);
+
+      // Hide nav row for 'all'
+      document.getElementById('historyNavRow').style.display = historyPeriod === 'all' ? 'none' : 'flex';
+
+      // Disable next if at today
+      var todayRange = getPeriodRange(getDayKey(), historyPeriod);
+      document.getElementById('btnNextPeriod').disabled = (range.end >= todayRange.end);
+
+      // Show add buttons only for day view
+      document.getElementById('historyActions').style.display = historyPeriod === 'day' ? 'flex' : 'none';
+
+      // Load entries
+      if (historyPeriod === 'day') {
+        viewingDate = range.start;
+        try { entries = await apiGetEntries(currentUser, range.start); }
+        catch(e) { entries = []; }
+        historyEntries = entries;
+      } else {
+        try { historyEntries = await apiGetEntriesRange(currentUser, range.start, range.end); }
+        catch(e) { historyEntries = []; }
+      }
+
+      updateHistoryDisplay();
+    }
+
+    function updateHistoryDisplay() {
+      var eaten = 0, exercise = 0;
+      historyEntries.forEach(function(e) {
+        if (e.type === 'food') eaten += e.cal;
+        else exercise += e.cal;
+      });
+
+      var burn = getDailyBurn();
+      var days = 1;
+      if (historyPeriod !== 'day') {
+        var range = getPeriodRange(viewingDate || getDayKey(), historyPeriod);
+        var s = new Date(range.start + 'T12:00:00');
+        var e = new Date(range.end + 'T12:00:00');
+        days = Math.round((e - s) / 86400000) + 1;
+        // For current period, only count up to today
+        var today = new Date(getDayKey() + 'T12:00:00');
+        if (e > today) {
+          days = Math.round((today - s) / 86400000) + 1;
+        }
+        if (days < 1) days = 1;
+      }
+
+      var totalBurn = burn * days;
+      var net = totalBurn - eaten + exercise;
+
+      var netEl = document.getElementById('historyNetCalories');
+      netEl.textContent = Math.round(net);
+      netEl.className = 'available-calories';
+      if (net < 0) netEl.classList.add('color-red');
+      else if (net < GREEN_THRESHOLD) netEl.classList.add('color-yellow');
+      else netEl.classList.add('color-green');
+
+      document.getElementById('historyBurnStat').textContent = totalBurn;
+      document.getElementById('historyEatenStat').textContent = eaten;
+      document.getElementById('historyExerciseStat').textContent = exercise;
+
+      var summary = historyPeriod === 'day'
+        ? (totalBurn + ' burn \u2013 ' + eaten + ' eaten + ' + exercise + ' exercise')
+        : (days + ' days \u00b7 avg ' + Math.round(eaten / days) + ' eaten/day');
+      document.getElementById('historySummaryLine').textContent = summary;
+
+      document.getElementById('historyLogTitle').textContent =
+        historyPeriod === 'day' ? 'Entries' : historyEntries.length + ' Entries';
+
+      // Render entries
+      var container = document.getElementById('historyLogEntries');
+      if (historyEntries.length === 0) {
+        container.innerHTML = '<div class="empty-log">No entries</div>';
+        return;
+      }
+      var sorted = historyEntries.slice().reverse();
+      container.innerHTML = sorted.map(function(e) {
+        var sign = e.type === 'food' ? '-' : '+';
+        var cls = e.type === 'food' ? 'food' : 'exercise';
+        var d = new Date(e.time);
+        var timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        var dateStr = historyPeriod !== 'day'
+          ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
+          : '';
+        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+          escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
+          '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
+          cls + '">' + sign + e.cal + '</div>' +
+          (historyPeriod === 'day' ? '<button class="log-entry-delete" data-id="' + e.id + '">\u00d7</button>' : '') +
+          '</div></div>';
+      }).join('');
+
+      if (historyPeriod === 'day') {
+        container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
+          btn.addEventListener('click', async function() {
+            await deleteEntryFromState(btn.dataset.id);
+            historyEntries = entries;
+            updateHistoryDisplay();
+          });
+        });
+      }
+    }
+
+    function showHistory() {
+      viewingDate = dateAdd(getDayKey(), -1);
+      getTodaySections().forEach(function(el) { el.style.display = 'none'; });
+      document.getElementById('historyView').style.display = 'block';
+      loadHistoryView();
+    }
+
+    function showToday() {
+      viewingDate = null;
+      document.getElementById('historyView').style.display = 'none';
+      getTodaySections().forEach(function(el) { el.style.display = ''; });
+      loadEntries().then(refresh);
+    }
+
+    function setPeriod(period) {
+      historyPeriod = period;
+      document.querySelectorAll('.period-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.period === period);
+      });
+      loadHistoryView();
+    }
+
     // --- Init ---
     async function init() {
       try {
@@ -544,6 +819,17 @@
         });
         document.getElementById('profileSave').addEventListener('click', saveProfile);
 
+        // History
+        document.getElementById('btnHistory').addEventListener('click', showHistory);
+        document.getElementById('btnHistoryBack').addEventListener('click', showToday);
+        document.getElementById('btnPrevPeriod').addEventListener('click', function() { navigatePeriod(-1); });
+        document.getElementById('btnNextPeriod').addEventListener('click', function() { navigatePeriod(1); });
+        document.querySelectorAll('.period-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() { setPeriod(tab.dataset.period); });
+        });
+        document.getElementById('btnHistoryFood').addEventListener('click', function() { openModal('food'); });
+        document.getElementById('btnHistoryExercise').addEventListener('click', function() { openModal('exercise'); });
+
         ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(function(id) {
           document.getElementById(id).addEventListener('input', updateBurnDisplay);
           document.getElementById(id).addEventListener('change', updateBurnDisplay);
@@ -561,7 +847,9 @@
           await showUserPicker();
         }
 
-        setInterval(updateDisplay, 1000);
+        setInterval(function() {
+          if (document.getElementById('historyView').style.display === 'none') updateDisplay();
+        }, 1000);
 
         var currentDayKey = getDayKey();
         setInterval(async function() {

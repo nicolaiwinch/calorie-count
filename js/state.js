@@ -10,6 +10,7 @@ import * as api from './api.js';
 let entries = [];
 let currentUser = localStorage.getItem('current_user') || null;
 let userProfile = null;
+let viewingDate = null; // null = today, else 'YYYY-MM-DD'
 
 // --- Day helpers ---
 
@@ -27,6 +28,10 @@ export function getDayKey() {
   const d = getDayStart();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+
+export function getActiveDate() { return viewingDate || getDayKey(); }
+export function isViewingToday() { return !viewingDate || viewingDate === getDayKey(); }
+export function setViewingDate(date) { viewingDate = date; }
 
 // --- User ---
 
@@ -76,33 +81,37 @@ export async function loadEntries() {
     return;
   }
   try {
-    entries = await api.getEntries(currentUser, getDayKey());
+    entries = await api.getEntries(currentUser, getActiveDate());
   } catch {
     entries = [];
   }
 }
 
 export async function addEntryToState(type, name, cal) {
-  const entry = {
-    type,
-    name,
-    cal,
-    time: new Date().toISOString(),
-  };
+  const date = getActiveDate();
+  const time = isViewingToday() ? new Date().toISOString() : date + 'T12:00:00';
+  const entry = { type, name, cal, time };
   const saved = await api.addEntry(currentUser, entry);
   entries.push(saved);
 }
 
 export async function deleteEntryFromState(entryId) {
-  await api.deleteEntry(currentUser, getDayKey(), entryId);
+  await api.deleteEntry(currentUser, getActiveDate(), entryId);
   entries = entries.filter(e => e.id !== entryId);
 }
 
 export async function clearEntries() {
-  // Delete all entries one by one
-  const day = getDayKey();
+  const day = getActiveDate();
   await Promise.all(entries.map(e => api.deleteEntry(currentUser, day, e.id)));
   entries = [];
+}
+
+export async function listDates() {
+  return api.listDates(currentUser);
+}
+
+export async function getEntriesRange(start, end) {
+  return api.getEntriesRange(currentUser, start, end);
 }
 
 export function getTotals() {

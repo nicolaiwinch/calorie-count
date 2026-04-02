@@ -8,6 +8,16 @@ from models import EntryIn, EntryOut
 router = APIRouter(prefix="/api/entries", tags=["entries"])
 
 
+@router.get("/{user_id}/dates")
+def list_dates(user_id: str) -> list[str]:
+    return STORAGE.list_entry_dates(user_id)
+
+
+@router.get("/{user_id}/range/{start}/{end}")
+def get_entries_range(user_id: str, start: date, end: date) -> list[EntryOut]:
+    return STORAGE.get_entries_range(user_id, start, end)
+
+
 @router.get("/{user_id}/{day}")
 def get_entries(user_id: str, day: date) -> list[EntryOut]:
     return STORAGE.get_entries(user_id, day)

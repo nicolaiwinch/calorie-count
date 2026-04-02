@@ -86,3 +86,31 @@ class JsonStorage(StorageBackend):
     def list_users(self) -> list[dict]:
         users = self._read_json(self.users_file)
         return [{"id": k, **v} for k, v in users.items()]
+
+    def list_entry_dates(self, user_id: str) -> list[str]:
+        user_dir = self.entries_dir / user_id
+        if not user_dir.exists():
+            return []
+        dates = []
+        for f in user_dir.glob("*.json"):
+            entries = self._read_json(f)
+            if entries:
+                dates.append(f.stem)
+        dates.sort(reverse=True)
+        return dates
+
+    def get_entries_range(self, user_id: str, start: date, end: date) -> list[dict]:
+        user_dir = self.entries_dir / user_id
+        if not user_dir.exists():
+            return []
+        all_entries = []
+        for f in user_dir.glob("*.json"):
+            try:
+                file_date = date.fromisoformat(f.stem)
+            except ValueError:
+                continue
+            if start <= file_date <= end:
+                day_entries = self._read_json(f)
+                all_entries.extend(day_entries)
+        all_entries.sort(key=lambda e: e.get("time", ""), reverse=True)
+        return all_entries

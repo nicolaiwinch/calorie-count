@@ -51,3 +51,11 @@ export function deleteEntry(userId, date, entryId) {
     method: 'DELETE',
   });
 }
+
+export function listDates(userId) {
+  return request(`/api/entries/${userId}/dates`);
+}
+
+export function getEntriesRange(userId, start, end) {
+  return request(`/api/entries/${userId}/range/${start}/${end}`);
+}

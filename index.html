@@ -428,7 +428,12 @@
       } else {
         var completedDays = getLivePeriodDays();
         totalBurned = (completedDays * getDailyBurn()) + burn.burned;
-        forecastBurn = (completedDays + 1) * getDailyBurn();
+        // Forecast = total burn for the entire period (all days)
+        var range = getPeriodRange(getDayKey(), livePeriod);
+        var rangeStart = new Date(range.start + 'T12:00:00');
+        var rangeEnd = new Date(range.end + 'T12:00:00');
+        var totalDaysInPeriod = Math.round((rangeEnd - rangeStart) / 86400000) + 1;
+        forecastBurn = totalDaysInPeriod * getDailyBurn();
       }
 
       var available = totalBurned - liveTotals.eaten + liveTotals.exercise;

@@ -450,6 +450,8 @@
         var kg = available / 7000;
         var sign = kg >= 0 ? '-' : '+';
         kgEl.textContent = '(' + sign + Math.abs(kg).toFixed(2) + ' kg)';
+        kgEl.style.color = kg >= 0 ? 'var(--color-green)' : 'var(--color-red)';
+        kgEl.style.opacity = '1';
       }
 
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;

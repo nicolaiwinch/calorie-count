@@ -778,11 +778,22 @@
       netEl.textContent = Math.round(net);
       netEl.className = 'available-calories';
 
-      // Grey out if low tracking (unless confirmed OK)
       var activeDay = viewingDate || getDayKey();
+      var viewingToday = activeDay === getDayKey();
       var isConfirmed = confirmedDays.indexOf(activeDay) !== -1;
-      if (historyPeriod === 'day' && eaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
-        netEl.style.color = 'var(--text-ghost)';
+      var entryCount = historyEntries.length;
+
+      if (historyPeriod === 'day' && !viewingToday && !isConfirmed) {
+        if (entryCount === 0) {
+          netEl.style.color = 'var(--text-ghost)';
+        } else if (eaten < LOW_TRACK_THRESHOLD) {
+          netEl.style.color = 'var(--color-yellow)';
+        } else {
+          netEl.style.color = '';
+          if (net < 0) netEl.classList.add('color-red');
+          else if (net < GREEN_THRESHOLD) netEl.classList.add('color-yellow');
+          else netEl.classList.add('color-green');
+        }
       } else {
         netEl.style.color = '';
         if (net < 0) netEl.classList.add('color-red');
@@ -853,7 +864,7 @@
           statusClass = 'day-card-today';
         } else if (dayEntries.length === 0) {
           status = 'empty';
-          statusClass = 'day-card-red';
+          statusClass = 'day-card-grey';
         } else if (dayEaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
           status = 'low';
           statusClass = 'day-card-yellow';

@@ -381,8 +381,9 @@ select.user-picker-input {
   cursor: default;
 }
 
-.day-card-red {
-  border-left-color: var(--color-red);
+.day-card-grey {
+  border-left-color: var(--text-ghost);
+  opacity: 0.5;
 }
 
 .day-card-yellow {
@@ -408,9 +409,9 @@ select.user-picker-input {
   margin-top: 2px;
 }
 
-.day-card-red .day-card-kcal {
-  color: var(--color-red);
-  opacity: 0.8;
+.day-card-grey .day-card-kcal {
+  color: var(--text-ghost);
+  opacity: 1;
 }
 
 .day-card-yellow .day-card-kcal {

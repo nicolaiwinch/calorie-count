@@ -778,12 +778,10 @@
       netEl.textContent = Math.round(net);
       netEl.className = 'available-calories';
 
-      // Grey out if past day with low/no tracking (unless confirmed OK)
+      // Grey out if low tracking (unless confirmed OK)
       var activeDay = viewingDate || getDayKey();
-      var isToday = activeDay === getDayKey();
-      var isDayView = historyPeriod === 'day';
       var isConfirmed = confirmedDays.indexOf(activeDay) !== -1;
-      if (isDayView && !isToday && eaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
+      if (historyPeriod === 'day' && eaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
         netEl.style.color = 'var(--text-ghost)';
       } else {
         netEl.style.color = '';

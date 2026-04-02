@@ -271,14 +271,15 @@ select.user-picker-input {
 }
 
 .history-link-btn {
-  background: none;
-  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 13px;
   padding: 12px 32px;
   border-radius: 12px;
   cursor: pointer;
-  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 /* History view */
@@ -293,15 +294,17 @@ select.user-picker-input {
   background: none;
   border: none;
   color: var(--color-green);
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   padding: 8px 0;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .history-period-tabs {
   display: flex;
-  gap: 4px;
+  gap: 2px;
   background: var(--bg-card);
   border-radius: 10px;
   padding: 3px;
@@ -310,15 +313,17 @@ select.user-picker-input {
 .period-tab {
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-size: 13px;
-  padding: 6px 14px;
+  color: var(--text-ghost);
+  font-size: 12px;
+  padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .period-tab.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
 }
 
@@ -331,10 +336,10 @@ select.user-picker-input {
 }
 
 .history-nav-btn {
-  background: none;
-  border: 1px solid var(--border-subtle);
-  color: var(--text-primary);
-  font-size: 20px;
+  background: var(--bg-card);
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -345,15 +350,16 @@ select.user-picker-input {
 }
 
 .history-nav-btn:disabled {
-  opacity: 0.2;
+  opacity: 0.15;
   cursor: default;
 }
 
 .history-date-label {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 300;
   min-width: 180px;
   text-align: center;
+  opacity: 0.6;
 }
 
 /* Switch user button */

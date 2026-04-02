@@ -51,7 +51,6 @@
   <!-- Main App -->
   <div id="appMain" style="display:none">
 
-    <button class="reset-btn" id="btnReset">Reset</button>
     <button class="switch-user-btn" id="btnSwitchUser"><span id="currentUserLabel"></span> ▾</button>
     <button class="profile-btn" id="btnProfile">Profile</button>
 
@@ -806,7 +805,6 @@
         initModal(handleAdd);
         document.getElementById('btnFood').addEventListener('click', function() { openModal('food'); });
         document.getElementById('btnExercise').addEventListener('click', function() { openModal('exercise'); });
-        document.getElementById('btnReset').addEventListener('click', resetDay);
         document.getElementById('btnSwitchUser').addEventListener('click', showUserPicker);
         document.getElementById('btnCreateUser').addEventListener('click', handleCreateUser);
         document.getElementById('btnProfile').addEventListener('click', openProfile);

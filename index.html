@@ -54,6 +54,14 @@
     <button class="switch-user-btn" id="btnSwitchUser"><span id="currentUserLabel"></span> ▾</button>
     <button class="profile-btn" id="btnProfile">Profile</button>
 
+    <div class="live-period-tabs-container">
+      <div class="history-period-tabs" id="livePeriodTabs">
+        <button class="period-tab active" data-period="day">Day</button>
+        <button class="period-tab" data-period="week">Week</button>
+        <button class="period-tab" data-period="month">Month</button>
+      </div>
+    </div>
+
     <div class="header">
       <div class="available-label">Available Calories</div>
       <div class="available-calories" id="availableCalories">0</div>
@@ -306,15 +314,17 @@
       currentUser = userId;
       localStorage.setItem('current_user', userId);
       entries = [];
+      liveEntries = [];
       userProfile = null;
       userProfile = await apiGetUser(userId);
-      await loadEntries();
+      await loadLiveEntries();
     }
 
     async function loadEntries() {
-      if (!currentUser) { entries = []; return; }
+      if (!currentUser) { entries = []; liveEntries = []; return; }
       try { entries = await apiGetEntries(currentUser, getActiveDate()); }
       catch(e) { entries = []; }
+      if (livePeriod === 'day') liveEntries = entries;
     }
 
     async function addEntryToState(type, name, cal) {
@@ -345,6 +355,36 @@
       return { eaten: eaten, exercise: exercise };
     }
 
+    // ===== live period =====
+    var livePeriod = 'day'; // day, week, month
+    var liveEntries = []; // entries for the current live period (may be more than today)
+
+    async function loadLiveEntries() {
+      if (!currentUser) { entries = []; liveEntries = []; return; }
+      try {
+        entries = await apiGetEntries(currentUser, getDayKey());
+      } catch(e) { entries = []; }
+
+      if (livePeriod === 'day') {
+        liveEntries = entries;
+      } else {
+        var range = getPeriodRange(getDayKey(), livePeriod);
+        try {
+          liveEntries = await apiGetEntriesRange(currentUser, range.start, range.end);
+        } catch(e) { liveEntries = entries; }
+      }
+    }
+
+    function setLivePeriod(period) {
+      livePeriod = period;
+      document.querySelectorAll('#livePeriodTabs .period-tab').forEach(function(t) {
+        t.classList.toggle('active', t.dataset.period === period);
+      });
+      // Show/hide burn bar (only for day)
+      document.querySelector('.burn-bar-container').style.display = period === 'day' ? '' : 'none';
+      loadLiveEntries().then(refresh);
+    }
+
     // ===== burn =====
     function getBurnedSoFar() {
       var now = new Date();
@@ -357,6 +397,14 @@
       return { burned: Math.floor(getDailyBurn() * fraction), fraction: fraction };
     }
 
+    function getLivePeriodDays() {
+      if (livePeriod === 'day') return 0; // use live burn for day
+      var range = getPeriodRange(getDayKey(), livePeriod);
+      var s = new Date(range.start + 'T12:00:00');
+      var today = new Date(getDayKey() + 'T12:00:00');
+      return Math.round((today - s) / 86400000); // completed days before today
+    }
+
     // ===== ui =====
     function escapeHtml(text) {
       var d = document.createElement('div');
@@ -366,8 +414,24 @@
 
     function updateDisplay() {
       var burn = getBurnedSoFar();
-      var totals = getTotals();
-      var available = burn.burned - totals.eaten + totals.exercise;
+      var liveTotals = { eaten: 0, exercise: 0 };
+      liveEntries.forEach(function(e) {
+        if (e.type === 'food') liveTotals.eaten += e.cal;
+        else liveTotals.exercise += e.cal;
+      });
+
+      var totalBurned;
+      var forecastBurn;
+      if (livePeriod === 'day') {
+        totalBurned = burn.burned;
+        forecastBurn = getDailyBurn();
+      } else {
+        var completedDays = getLivePeriodDays();
+        totalBurned = (completedDays * getDailyBurn()) + burn.burned;
+        forecastBurn = (completedDays + 1) * getDailyBurn();
+      }
+
+      var available = totalBurned - liveTotals.eaten + liveTotals.exercise;
 
       var el = document.getElementById('availableCalories');
       el.textContent = Math.round(available);
@@ -376,42 +440,71 @@
       else if (available < GREEN_THRESHOLD) el.classList.add('color-yellow');
       else el.classList.add('color-green');
 
-      var forecast = getDailyBurn() - totals.eaten + totals.exercise;
+      var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var forecastEl = document.getElementById('forecastCalories');
-      if (forecastEl) forecastEl.textContent = forecast + ' by midnight';
+      if (forecastEl) {
+        if (livePeriod === 'day') {
+          forecastEl.textContent = forecast + ' by midnight';
+        } else {
+          var range = getPeriodRange(getDayKey(), livePeriod);
+          var endDate = new Date(range.end + 'T12:00:00');
+          forecastEl.textContent = forecast + ' by ' + endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        }
+      }
 
-      document.getElementById('burnedStat').textContent = Math.round(burn.burned);
-      document.getElementById('eatenStat').textContent = totals.eaten;
-      document.getElementById('exerciseStat').textContent = totals.exercise;
+      document.getElementById('burnedStat').textContent = Math.round(totalBurned);
+      document.getElementById('eatenStat').textContent = liveTotals.eaten;
+      document.getElementById('exerciseStat').textContent = liveTotals.exercise;
 
-      var pct = Math.round(burn.fraction * 100);
-      document.getElementById('burnBarFill').style.width = pct + '%';
-      document.getElementById('burnBarPct').textContent = pct + '%';
+      if (livePeriod === 'day') {
+        var pct = Math.round(burn.fraction * 100);
+        document.getElementById('burnBarFill').style.width = pct + '%';
+        document.getElementById('burnBarPct').textContent = pct + '%';
+      }
 
       var userLabel = document.getElementById('currentUserLabel');
       if (userLabel) userLabel.textContent = getCurrentUser() || 'No user';
+
+      // Update log title
+      var logTitle = document.querySelector('#appMain > .log-section > .log-title');
+      if (logTitle) {
+        if (livePeriod === 'day') logTitle.textContent = "Today's Log";
+        else if (livePeriod === 'week') logTitle.textContent = 'This Week';
+        else if (livePeriod === 'month') logTitle.textContent = 'This Month';
+      }
     }
 
     function renderLog(onDelete) {
       var container = document.getElementById('logEntries');
-      var ents = getEntries();
+      var ents = liveEntries;
       if (ents.length === 0) {
-        container.innerHTML = '<div class="empty-log">No entries yet today</div>';
+        container.innerHTML = '<div class="empty-log">No entries yet</div>';
         return;
       }
       var sorted = ents.slice().reverse();
       container.innerHTML = sorted.map(function(e) {
         var sign = e.type === 'food' ? '-' : '+';
         var cls = e.type === 'food' ? 'food' : 'exercise';
-        var time = new Date(e.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        var d = new Date(e.time);
+        var timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        var dateStr = livePeriod !== 'day'
+          ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
+          : '';
         return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
-          escapeHtml(e.name) + '</div><div class="log-entry-time">' + time +
+          escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
           '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
           cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
-          e.id + '">\u00d7</button></div></div>';
+          e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>';
       }).join('');
       container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
-        btn.addEventListener('click', function() { onDelete(btn.dataset.id); });
+        btn.addEventListener('click', async function() {
+          var entryDay = btn.dataset.day;
+          var entryId = btn.dataset.id;
+          await apiDeleteEntry(currentUser, entryDay, entryId);
+          liveEntries = liveEntries.filter(function(e) { return e.id !== entryId; });
+          entries = entries.filter(function(e) { return e.id !== entryId; });
+          refresh();
+        });
       });
     }
 
@@ -481,6 +574,12 @@
         historyEntries = entries;
         updateHistoryDisplay();
       } else {
+        // Also add the new entry to liveEntries if in multi-day period
+        if (livePeriod !== 'day') {
+          liveEntries.push(entries[entries.length - 1]);
+        } else {
+          liveEntries = entries;
+        }
         refresh();
       }
     }
@@ -614,7 +713,7 @@
     function getTodaySections() {
       if (!todaySections) {
         var app = document.getElementById('appMain');
-        todaySections = app.querySelectorAll(':scope > .header, :scope > .stats-row, :scope > .burn-bar-container, :scope > .actions, :scope > .log-section, :scope > .history-link-container');
+        todaySections = app.querySelectorAll(':scope > .live-period-tabs-container, :scope > .header, :scope > .stats-row, :scope > .burn-bar-container, :scope > .actions, :scope > .log-section, :scope > .history-link-container');
       }
       return todaySections;
     }
@@ -941,7 +1040,9 @@
       viewingDate = null;
       document.getElementById('historyView').style.display = 'none';
       getTodaySections().forEach(function(el) { el.style.display = ''; });
-      loadEntries().then(refresh);
+      // Restore burn bar visibility based on live period
+      document.querySelector('.burn-bar-container').style.display = livePeriod === 'day' ? '' : 'none';
+      loadLiveEntries().then(refresh);
     }
 
     function setPeriod(period) {
@@ -969,6 +1070,11 @@
             document.getElementById('profileOverlay').classList.remove('active');
         });
         document.getElementById('profileSave').addEventListener('click', saveProfile);
+
+        // Live period tabs
+        document.querySelectorAll('#livePeriodTabs .period-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() { setLivePeriod(tab.dataset.period); });
+        });
 
         // History
         document.getElementById('btnHistory').addEventListener('click', showHistory);

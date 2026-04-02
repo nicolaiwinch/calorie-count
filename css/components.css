@@ -454,6 +454,13 @@ select.user-picker-input {
   font-size: 20px;
 }
 
+/* Live period tabs */
+.live-period-tabs-container {
+  display: flex;
+  justify-content: center;
+  padding: 60px 16px 0;
+}
+
 /* Switch user button */
 .switch-user-btn {
   position: absolute;

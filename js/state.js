@@ -45,6 +45,8 @@ export function getDailyBurn() {
 export async function setCurrentUser(userId) {
   currentUser = userId;
   localStorage.setItem('current_user', userId);
+  entries = [];
+  userProfile = null;
   userProfile = await api.getUser(userId);
   await loadEntries();
 }

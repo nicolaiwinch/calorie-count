@@ -65,7 +65,7 @@
     <div class="header">
       <div class="available-label">Available Calories</div>
       <div class="available-calories" id="availableCalories">0</div>
-      <div class="available-unit">kcal</div>
+      <div class="available-unit">kcal <span id="availableKg" style="opacity:0.4"></span></div>
       <div class="forecast" id="forecastCalories"></div>
     </div>
 
@@ -444,6 +444,13 @@
       if (available < 0) el.classList.add('color-red');
       else if (available < GREEN_THRESHOLD) el.classList.add('color-yellow');
       else el.classList.add('color-green');
+
+      var kgEl = document.getElementById('availableKg');
+      if (kgEl) {
+        var kg = available / 7000;
+        var sign = kg >= 0 ? '-' : '+';
+        kgEl.textContent = '(' + sign + Math.abs(kg).toFixed(2) + ' kg)';
+      }
 
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var forecastEl = document.getElementById('forecastCalories');

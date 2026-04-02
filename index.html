@@ -884,10 +884,10 @@
         html += '</div>';
         html += '<div class="day-card-actions">';
         if (status === 'low') {
-          html += '<button class="day-card-ok-btn" data-day="' + day + '">OK</button>';
+          html += '<button class="day-card-ok-btn" data-day="' + day + '">OK?</button>';
         }
         if (isConfirmed && dayEaten < LOW_TRACK_THRESHOLD && dayEntries.length > 0) {
-          html += '<span class="day-card-confirmed">\u2713</span>';
+          html += '<button class="day-card-undo-btn" data-day="' + day + '">\u2713</button>';
         }
         if (!isToday) {
           html += '<span class="day-card-arrow">\u203A</span>';
@@ -914,6 +914,17 @@
           var day = btn.dataset.day;
           await apiConfirmDay(currentUser, day);
           confirmedDays.push(day);
+          updateHistoryDisplay();
+        });
+      });
+
+      // Undo button to unconfirm a day
+      container.querySelectorAll('.day-card-undo-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function(e) {
+          e.stopPropagation();
+          var day = btn.dataset.day;
+          await apiUnconfirmDay(currentUser, day);
+          confirmedDays = confirmedDays.filter(function(d) { return d !== day; });
           updateHistoryDisplay();
         });
       });

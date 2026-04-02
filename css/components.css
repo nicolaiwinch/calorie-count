@@ -438,9 +438,15 @@ select.user-picker-input {
   letter-spacing: 0.5px;
 }
 
-.day-card-confirmed {
+.day-card-undo-btn {
+  background: none;
+  border: 1px solid var(--color-green);
   color: var(--color-green);
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
 }
 
 .day-card-arrow {

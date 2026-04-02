@@ -59,3 +59,15 @@ export function listDates(userId) {
 export function getEntriesRange(userId, start, end) {
   return request(`/api/entries/${userId}/range/${start}/${end}`);
 }
+
+export function getConfirmedDays(userId) {
+  return request(`/api/entries/${userId}/confirmed`);
+}
+
+export function confirmDay(userId, day) {
+  return request(`/api/entries/${userId}/confirm/${day}`, { method: 'POST' });
+}
+
+export function unconfirmDay(userId, day) {
+  return request(`/api/entries/${userId}/confirm/${day}`, { method: 'DELETE' });
+}

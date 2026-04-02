@@ -362,6 +362,91 @@ select.user-picker-input {
   opacity: 0.6;
 }
 
+/* Day cards (history week/month/all view) */
+.day-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+}
+
+.day-card-today {
+  border-left-color: var(--color-green);
+  opacity: 0.4;
+  cursor: default;
+}
+
+.day-card-red {
+  border-left-color: var(--color-red);
+}
+
+.day-card-yellow {
+  border-left-color: var(--color-yellow);
+}
+
+.day-card-ok {
+  border-left-color: var(--color-green);
+}
+
+.day-card-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.day-card-date {
+  font-size: 15px;
+}
+
+.day-card-kcal {
+  font-size: 12px;
+  opacity: 0.4;
+  margin-top: 2px;
+}
+
+.day-card-red .day-card-kcal {
+  color: var(--color-red);
+  opacity: 0.8;
+}
+
+.day-card-yellow .day-card-kcal {
+  color: var(--color-yellow);
+  opacity: 0.8;
+}
+
+.day-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.day-card-ok-btn {
+  background: none;
+  border: 1px solid var(--color-green);
+  color: var(--color-green);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.day-card-confirmed {
+  color: var(--color-green);
+  font-size: 16px;
+}
+
+.day-card-arrow {
+  color: var(--text-ghost);
+  font-size: 20px;
+}
+
 /* Switch user button */
 .switch-user-btn {
   position: absolute;

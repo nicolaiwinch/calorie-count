@@ -267,6 +267,13 @@
     function apiGetEntriesRange(userId, start, end) {
       return apiRequest('/api/entries/' + userId + '/range/' + start + '/' + end);
     }
+    function apiGetConfirmed(userId) { return apiRequest('/api/entries/' + userId + '/confirmed'); }
+    function apiConfirmDay(userId, day) {
+      return apiRequest('/api/entries/' + userId + '/confirm/' + day, { method: 'POST' });
+    }
+    function apiUnconfirmDay(userId, day) {
+      return apiRequest('/api/entries/' + userId + '/confirm/' + day, { method: 'DELETE' });
+    }
 
     // ===== state =====
     var entries = [];
@@ -600,7 +607,9 @@
     // --- History ---
     var historyPeriod = 'day'; // day, week, month, all
     var historyEntries = [];
+    var confirmedDays = []; // dates marked as OK
     var todaySections = null; // cached NodeList of today-only sections
+    var LOW_TRACK_THRESHOLD = 1000; // kcal below which a day is flagged
 
     function getTodaySections() {
       if (!todaySections) {
@@ -685,18 +694,45 @@
       // Show add buttons only for day view
       document.getElementById('historyActions').style.display = historyPeriod === 'day' ? 'flex' : 'none';
 
-      // Load entries
+      // Load entries and confirmed days
       if (historyPeriod === 'day') {
         viewingDate = range.start;
         try { entries = await apiGetEntries(currentUser, range.start); }
         catch(e) { entries = []; }
         historyEntries = entries;
       } else {
-        try { historyEntries = await apiGetEntriesRange(currentUser, range.start, range.end); }
-        catch(e) { historyEntries = []; }
+        try {
+          var results = await Promise.all([
+            apiGetEntriesRange(currentUser, range.start, range.end),
+            apiGetConfirmed(currentUser)
+          ]);
+          historyEntries = results[0];
+          confirmedDays = results[1];
+        } catch(e) { historyEntries = []; confirmedDays = []; }
       }
 
       updateHistoryDisplay();
+    }
+
+    function groupEntriesByDay(entries) {
+      var map = {};
+      entries.forEach(function(e) {
+        var day = e.time.slice(0, 10);
+        if (!map[day]) map[day] = [];
+        map[day].push(e);
+      });
+      return map;
+    }
+
+    function getDaysInRange(start, end) {
+      var days = [];
+      var today = getDayKey();
+      var d = end > today ? today : end;
+      while (d >= start) {
+        days.push(d);
+        d = dateAdd(d, -1);
+      }
+      return days;
     }
 
     function updateHistoryDisplay() {
@@ -713,7 +749,6 @@
         var s = new Date(range.start + 'T12:00:00');
         var e = new Date(range.end + 'T12:00:00');
         days = Math.round((e - s) / 86400000) + 1;
-        // For current period, only count up to today
         var today = new Date(getDayKey() + 'T12:00:00');
         if (e > today) {
           days = Math.round((today - s) / 86400000) + 1;
@@ -740,33 +775,27 @@
         : (days + ' days \u00b7 avg ' + Math.round(eaten / days) + ' eaten/day');
       document.getElementById('historySummaryLine').textContent = summary;
 
-      document.getElementById('historyLogTitle').textContent =
-        historyPeriod === 'day' ? 'Entries' : historyEntries.length + ' Entries';
-
-      // Render entries
       var container = document.getElementById('historyLogEntries');
-      if (historyEntries.length === 0) {
-        container.innerHTML = '<div class="empty-log">No entries</div>';
-        return;
-      }
-      var sorted = historyEntries.slice().reverse();
-      container.innerHTML = sorted.map(function(e) {
-        var sign = e.type === 'food' ? '-' : '+';
-        var cls = e.type === 'food' ? 'food' : 'exercise';
-        var d = new Date(e.time);
-        var timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        var dateStr = historyPeriod !== 'day'
-          ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
-          : '';
-        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
-          escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
-          '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
-          cls + '">' + sign + e.cal + '</div>' +
-          (historyPeriod === 'day' ? '<button class="log-entry-delete" data-id="' + e.id + '">\u00d7</button>' : '') +
-          '</div></div>';
-      }).join('');
 
+      // Day view: show individual entries
       if (historyPeriod === 'day') {
+        document.getElementById('historyLogTitle').textContent = 'Entries';
+        if (historyEntries.length === 0) {
+          container.innerHTML = '<div class="empty-log">No entries</div>';
+          return;
+        }
+        var sorted = historyEntries.slice().reverse();
+        container.innerHTML = sorted.map(function(e) {
+          var sign = e.type === 'food' ? '-' : '+';
+          var cls = e.type === 'food' ? 'food' : 'exercise';
+          var d = new Date(e.time);
+          var timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+            escapeHtml(e.name) + '</div><div class="log-entry-time">' + timeStr +
+            '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
+            cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
+            e.id + '">\u00d7</button></div></div>';
+        }).join('');
         container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
           btn.addEventListener('click', async function() {
             await deleteEntryFromState(btn.dataset.id);
@@ -774,7 +803,81 @@
             updateHistoryDisplay();
           });
         });
+        return;
       }
+
+      // Week/month/all view: show day-by-day cards
+      document.getElementById('historyLogTitle').textContent = 'Days';
+      var range = getPeriodRange(viewingDate || getDayKey(), historyPeriod);
+      var allDays = getDaysInRange(range.start, range.end);
+      var byDay = groupEntriesByDay(historyEntries);
+
+      container.innerHTML = allDays.map(function(day) {
+        var dayEntries = byDay[day] || [];
+        var dayEaten = 0;
+        dayEntries.forEach(function(e) { if (e.type === 'food') dayEaten += e.cal; });
+        var isConfirmed = confirmedDays.indexOf(day) !== -1;
+        var isToday = day === getDayKey();
+
+        var status, statusClass;
+        if (isToday) {
+          status = 'today';
+          statusClass = 'day-card-today';
+        } else if (dayEntries.length === 0) {
+          status = 'empty';
+          statusClass = 'day-card-red';
+        } else if (dayEaten < LOW_TRACK_THRESHOLD && !isConfirmed) {
+          status = 'low';
+          statusClass = 'day-card-yellow';
+        } else {
+          status = 'ok';
+          statusClass = 'day-card-ok';
+        }
+
+        var d = new Date(day + 'T12:00:00');
+        var label = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        var kcalText = dayEntries.length === 0 ? 'No entries' : dayEaten + ' kcal eaten';
+
+        var html = '<div class="day-card ' + statusClass + '" data-day="' + day + '">';
+        html += '<div class="day-card-info">';
+        html += '<div class="day-card-date">' + label + '</div>';
+        html += '<div class="day-card-kcal">' + kcalText + '</div>';
+        html += '</div>';
+        html += '<div class="day-card-actions">';
+        if (status === 'low') {
+          html += '<button class="day-card-ok-btn" data-day="' + day + '">OK</button>';
+        }
+        if (isConfirmed && dayEaten < LOW_TRACK_THRESHOLD && dayEntries.length > 0) {
+          html += '<span class="day-card-confirmed">\u2713</span>';
+        }
+        if (!isToday) {
+          html += '<span class="day-card-arrow">\u203A</span>';
+        }
+        html += '</div></div>';
+        return html;
+      }).join('');
+
+      // Click day card to navigate to that day
+      container.querySelectorAll('.day-card[data-day]').forEach(function(card) {
+        card.addEventListener('click', function(e) {
+          if (e.target.classList.contains('day-card-ok-btn')) return;
+          var day = card.dataset.day;
+          if (day === getDayKey()) return;
+          viewingDate = day;
+          setPeriod('day');
+        });
+      });
+
+      // OK button to confirm a day
+      container.querySelectorAll('.day-card-ok-btn').forEach(function(btn) {
+        btn.addEventListener('click', async function(e) {
+          e.stopPropagation();
+          var day = btn.dataset.day;
+          await apiConfirmDay(currentUser, day);
+          confirmedDays.push(day);
+          updateHistoryDisplay();
+        });
+      });
     }
 
     function showHistory() {

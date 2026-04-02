@@ -18,6 +18,23 @@ def get_entries_range(user_id: str, start: date, end: date) -> list[EntryOut]:
     return STORAGE.get_entries_range(user_id, start, end)
 
 
+@router.get("/{user_id}/confirmed")
+def get_confirmed(user_id: str) -> list[str]:
+    return STORAGE.get_confirmed_days(user_id)
+
+
+@router.post("/{user_id}/confirm/{day}")
+def confirm_day(user_id: str, day: date) -> dict:
+    STORAGE.confirm_day(user_id, day)
+    return {"confirmed": True}
+
+
+@router.delete("/{user_id}/confirm/{day}")
+def unconfirm_day(user_id: str, day: date) -> dict:
+    STORAGE.unconfirm_day(user_id, day)
+    return {"unconfirmed": True}
+
+
 @router.get("/{user_id}/{day}")
 def get_entries(user_id: str, day: date) -> list[EntryOut]:
     return STORAGE.get_entries(user_id, day)

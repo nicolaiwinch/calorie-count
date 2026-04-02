@@ -43,3 +43,15 @@ class StorageBackend(ABC):
     @abstractmethod
     def get_entries_range(self, user_id: str, start: date, end: date) -> list[dict]:
         """Get all entries for a user between start and end dates (inclusive)."""
+
+    @abstractmethod
+    def get_confirmed_days(self, user_id: str) -> list[str]:
+        """Get list of dates confirmed as OK by the user."""
+
+    @abstractmethod
+    def confirm_day(self, user_id: str, day: date) -> bool:
+        """Mark a day as confirmed OK. Returns True."""
+
+    @abstractmethod
+    def unconfirm_day(self, user_id: str, day: date) -> bool:
+        """Remove confirmed status from a day. Returns True."""

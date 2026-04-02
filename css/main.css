@@ -10,6 +10,12 @@ body {
   user-select: none;
 }
 
+#appMain {
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+}
+
 .header {
   text-align: center;
   padding: 60px 20px 20px;

@@ -682,7 +682,16 @@
 
     async function loadHistoryView() {
       var range = getPeriodRange(viewingDate || getDayKey(), historyPeriod);
-      document.getElementById('historyDateLabel').textContent = formatPeriodLabel(viewingDate || getDayKey(), historyPeriod);
+      var dateLabel = document.getElementById('historyDateLabel');
+      dateLabel.textContent = formatPeriodLabel(viewingDate || getDayKey(), historyPeriod);
+
+      // Red date label when viewing past
+      var isPast = historyPeriod === 'day' && range.start !== getDayKey();
+      dateLabel.style.color = isPast ? 'var(--color-red)' : '';
+
+      // Back button: show "Today" to return, or the date if viewing today in day mode
+      var backBtn = document.getElementById('btnHistoryBack');
+      backBtn.textContent = '\u2190 Today';
 
       // Hide nav row for 'all'
       document.getElementById('historyNavRow').style.display = historyPeriod === 'all' ? 'none' : 'flex';
@@ -779,7 +788,11 @@
 
       // Day view: show individual entries
       if (historyPeriod === 'day') {
-        document.getElementById('historyLogTitle').textContent = 'Entries';
+        var activeDay = viewingDate || getDayKey();
+        var isEditingToday = activeDay === getDayKey();
+        document.getElementById('historyLogTitle').textContent = isEditingToday
+          ? 'Today\'s Entries'
+          : formatDateLabel(activeDay) + ' \u2014 Entries';
         if (historyEntries.length === 0) {
           container.innerHTML = '<div class="empty-log">No entries</div>';
           return;

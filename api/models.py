@@ -36,6 +36,7 @@ class UserProfile(BaseModel):
     daily_burn: int = 2200        # auto-calculated if profile is complete
     pin: str = ""
     track_healthiness: bool = False
+    weekly_kg_goal: float = 0     # target kg to lose per week (0 = no goal)
 
 
 def calculate_daily_burn(profile: dict) -> int:

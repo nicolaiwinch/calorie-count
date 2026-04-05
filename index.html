@@ -215,6 +215,7 @@
           <input type="checkbox" id="profileHealthiness">
           <span>Track food healthiness</span>
         </label>
+        <input type="number" id="profileWeeklyGoal" placeholder="Weekly weight loss goal (kg)" inputmode="decimal" step="0.1" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
           <button class="modal-btn modal-btn-add" id="profileSave">Save</button>
@@ -266,6 +267,11 @@
     // ===== config =====
     var DAY_START_HOUR = 0;
     var GREEN_THRESHOLD = 600;
+    function getGreenThreshold(days) {
+      var weeklyGoal = (userProfile && userProfile.weekly_kg_goal) || 0;
+      if (weeklyGoal > 0) return weeklyGoal * 1000 * (days || 1);
+      return GREEN_THRESHOLD;
+    }
     var API_URL = localStorage.getItem('api_url') || 'https://calorie-counter-api-production.up.railway.app';
 
     var FOOD_QUICK_PICKS = [
@@ -491,11 +497,33 @@
 
       var available = totalBurned - liveTotals.eaten + liveTotals.exercise;
 
+      // Calculate green threshold based on weekly goal
+      var weeklyGoal = (userProfile && userProfile.weekly_kg_goal) || 0;
+      var greenThreshold;
+      var goalCalories;
+      if (weeklyGoal > 0) {
+        var dailyDeficit = weeklyGoal * 1000; // kcal deficit per day
+        if (livePeriod === 'day') {
+          greenThreshold = dailyDeficit;
+          goalCalories = getDailyBurn() - dailyDeficit;
+        } else {
+          var range2 = getPeriodRange(getDayKey(), livePeriod);
+          var rs = new Date(range2.start + 'T12:00:00');
+          var re = new Date(range2.end + 'T12:00:00');
+          var periodDays = Math.round((re - rs) / 86400000) + 1;
+          greenThreshold = dailyDeficit * periodDays;
+          goalCalories = Math.round((getDailyBurn() - dailyDeficit) * periodDays);
+        }
+      } else {
+        greenThreshold = GREEN_THRESHOLD;
+        goalCalories = null;
+      }
+
       var el = document.getElementById('availableCalories');
       el.textContent = Math.round(available);
       el.className = 'available-calories';
       if (available < 0) el.classList.add('color-red');
-      else if (available < GREEN_THRESHOLD) el.classList.add('color-yellow');
+      else if (available < greenThreshold) el.classList.add('color-yellow');
       else el.classList.add('color-green');
 
       var kgEl = document.getElementById('availableKg');
@@ -510,13 +538,16 @@
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var forecastEl = document.getElementById('forecastCalories');
       if (forecastEl) {
+        var forecastText;
         if (livePeriod === 'day') {
-          forecastEl.textContent = forecast + ' by midnight';
+          forecastText = forecast + ' by midnight';
         } else {
           var range = getPeriodRange(getDayKey(), livePeriod);
           var endDate = new Date(range.end + 'T12:00:00');
-          forecastEl.textContent = forecast + ' by ' + endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          forecastText = forecast + ' by ' + endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         }
+        if (goalCalories) forecastText += '  ·  goal ' + goalCalories + ' kcal';
+        forecastEl.textContent = forecastText;
       }
 
       document.getElementById('burnedStat').textContent = Math.round(totalBurned);
@@ -849,6 +880,7 @@
         if (genderSelect.options[i].value === genderValue) { genderSelect.selectedIndex = i; break; }
       }
       document.getElementById('profileHealthiness').checked = !!profile.track_healthiness;
+      document.getElementById('profileWeeklyGoal').value = profile.weekly_kg_goal || '';
       updateBurnDisplay();
       document.getElementById('profileOverlay').classList.add('active');
     }
@@ -888,6 +920,7 @@
         activity: document.getElementById('profileActivity').value,
         pin: getUserProfile() ? (getUserProfile().pin || '') : '',
         track_healthiness: document.getElementById('profileHealthiness').checked,
+        weekly_kg_goal: parseFloat(document.getElementById('profileWeeklyGoal').value) || 0,
       };
       userProfile = await apiSaveUser(userId, profile);
       document.getElementById('profileOverlay').classList.remove('active');
@@ -1079,7 +1112,7 @@
       } else {
         netEl.style.color = '';
         if (net < 0) netEl.classList.add('color-red');
-        else if (net < GREEN_THRESHOLD) netEl.classList.add('color-yellow');
+        else if (net < getGreenThreshold(1)) netEl.classList.add('color-yellow');
         else netEl.classList.add('color-green');
       }
 
@@ -1156,7 +1189,7 @@
         } else if (dayNet < 0) {
           status = 'tracked';
           statusClass = 'day-card-red';
-        } else if (dayNet < GREEN_THRESHOLD) {
+        } else if (dayNet < getGreenThreshold(1)) {
           status = 'tracked';
           statusClass = 'day-card-yellow';
         } else {

@@ -50,6 +50,8 @@
 .log-entry-cal {
   font-size: 18px;
   font-weight: 600;
+  min-width: 55px;
+  text-align: right;
 }
 
 .log-entry-cal.food { color: var(--color-food); }

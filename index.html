@@ -1369,12 +1369,9 @@
       var green = getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim();
       var yellow = getComputedStyle(document.documentElement).getPropertyValue('--color-yellow').trim();
 
-      // --- Predicted weight (dotted, yellow/orange) ---
-      var predPoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      html += '<polyline points="' + predPoints + '" fill="none" stroke="' + yellow + '" stroke-width="1.5" stroke-dasharray="4,4" stroke-linejoin="round" />';
-
-      // Tap targets for predicted line
+      // --- Predicted weight (one dot per day, yellow/orange) ---
       predicted.forEach(function(e) {
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="2" fill="' + yellow + '" />';
         var dl = new Date(e.date + 'T00:00:00');
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';
@@ -1415,7 +1412,7 @@
       // Legend
       html += '<circle cx="' + (pad.left + 4) + '" cy="' + (h - 4) + '" r="4" fill="' + green + '" />';
       html += '<text x="' + (pad.left + 12) + '" y="' + (h - 1) + '" fill="rgba(255,255,255,0.4)" font-size="9">Actual</text>';
-      html += '<line x1="' + (pad.left + 52) + '" y1="' + (h - 4) + '" x2="' + (pad.left + 68) + '" y2="' + (h - 4) + '" stroke="' + yellow + '" stroke-width="2" stroke-dasharray="4,3" />';
+      html += '<circle cx="' + (pad.left + 58) + '" cy="' + (h - 4) + '" r="4" fill="' + yellow + '" />';
       html += '<text x="' + (pad.left + 72) + '" y="' + (h - 1) + '" fill="rgba(255,255,255,0.4)" font-size="9">Calculated</text>';
 
       svg.innerHTML = html;

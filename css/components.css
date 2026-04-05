@@ -523,6 +523,105 @@ select.user-picker-input {
   vertical-align: middle;
 }
 
+/* Healthiness charts */
+#healthChartsContainer {
+  display: flex;
+  gap: 16px;
+  padding: 0 16px;
+}
+
+.health-donut-container,
+.health-bar-container {
+  flex: 1;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.health-chart-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.5;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* Donut chart */
+.health-donut-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 8px;
+}
+
+.health-donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.health-donut-bg {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 12;
+}
+
+.health-donut-seg {
+  fill: none;
+  stroke-width: 12;
+  stroke-linecap: butt;
+  transition: stroke-dasharray 0.3s, stroke-dashoffset 0.3s;
+}
+
+.health-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  opacity: 0.5;
+}
+
+/* Stacked bar */
+.health-bar {
+  display: flex;
+  height: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--border-subtle);
+  margin-bottom: 8px;
+}
+
+.health-bar-seg {
+  height: 100%;
+  transition: width 0.3s;
+  min-width: 0;
+}
+
+/* Shared legend */
+.health-legend {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.health-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.health-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
 /* Live period tabs */
 .live-period-tabs-container {
   display: flex;

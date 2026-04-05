@@ -84,6 +84,32 @@
       </div>
     </div>
 
+    <!-- Healthiness charts (only shown when feature enabled) -->
+    <div id="healthChartsContainer" style="display:none">
+      <!-- Option A: Donut chart -->
+      <div class="health-donut-container">
+        <div class="health-chart-label">Food Healthiness</div>
+        <div class="health-donut-wrap">
+          <svg class="health-donut" viewBox="0 0 120 120">
+            <circle class="health-donut-bg" cx="60" cy="60" r="48" />
+            <circle class="health-donut-seg" id="donutGreen" cx="60" cy="60" r="48" />
+            <circle class="health-donut-seg" id="donutYellow" cx="60" cy="60" r="48" />
+            <circle class="health-donut-seg" id="donutOrange" cx="60" cy="60" r="48" />
+            <circle class="health-donut-seg" id="donutRed" cx="60" cy="60" r="48" />
+          </svg>
+          <div class="health-donut-center" id="donutCenterLabel"></div>
+        </div>
+        <div class="health-legend" id="donutLegend"></div>
+      </div>
+
+      <!-- Option B: Stacked bar -->
+      <div class="health-bar-container">
+        <div class="health-chart-label">Food Healthiness</div>
+        <div class="health-bar" id="healthBar"></div>
+        <div class="health-legend" id="barLegend"></div>
+      </div>
+    </div>
+
     <div class="burn-bar-container">
       <div class="burn-bar-label">
         <span>Day progress (midnight – midnight)</span>
@@ -493,6 +519,9 @@
       var userLabel = document.getElementById('currentUserLabel');
       if (userLabel) userLabel.textContent = getCurrentUser() || 'No user';
 
+      // Healthiness charts
+      updateHealthCharts(liveEntries);
+
       // Update log title
       var logTitle = document.querySelector('#appMain > .log-section > .log-title');
       if (logTitle) {
@@ -507,6 +536,77 @@
       var colors = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#f1c40f', green: 'var(--color-green)' };
       var c = colors[entry.healthiness] || '';
       return '<span class="log-health-dot" style="background:' + c + '"></span>';
+    }
+
+    function updateHealthCharts(ents) {
+      var container = document.getElementById('healthChartsContainer');
+      if (!userProfile || !userProfile.track_healthiness) {
+        container.style.display = 'none';
+        return;
+      }
+
+      // Count calories per healthiness category (food entries only)
+      var cats = { green: 0, yellow: 0, orange: 0, red: 0 };
+      var total = 0;
+      ents.forEach(function(e) {
+        if (e.type === 'food' && e.healthiness && cats.hasOwnProperty(e.healthiness)) {
+          cats[e.healthiness] += e.cal;
+          total += e.cal;
+        }
+      });
+
+      if (total === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'flex';
+
+      var colors = {
+        green: 'var(--color-green)',
+        yellow: '#f1c40f',
+        orange: 'var(--color-yellow)',
+        red: 'var(--color-red)'
+      };
+      var labels = { green: 'Green', yellow: 'Yellow', orange: 'Orange', red: 'Red' };
+      var order = ['green', 'yellow', 'orange', 'red'];
+
+      // Calculate percentages
+      var pcts = {};
+      order.forEach(function(k) { pcts[k] = total > 0 ? (cats[k] / total) * 100 : 0; });
+
+      // --- Donut chart (SVG stroke-dasharray) ---
+      var circumference = 2 * Math.PI * 48; // r=48
+      var offset = 0;
+      order.forEach(function(k) {
+        var seg = document.getElementById('donut' + k.charAt(0).toUpperCase() + k.slice(1));
+        var len = (pcts[k] / 100) * circumference;
+        seg.setAttribute('stroke', colors[k]);
+        seg.setAttribute('stroke-dasharray', len + ' ' + (circumference - len));
+        seg.setAttribute('stroke-dashoffset', -offset);
+        offset += len;
+      });
+      document.getElementById('donutCenterLabel').textContent = total + ' cal';
+
+      // --- Stacked bar ---
+      var barHtml = '';
+      order.forEach(function(k) {
+        if (pcts[k] > 0) {
+          barHtml += '<div class="health-bar-seg" style="width:' + pcts[k] + '%;background:' + colors[k] + '"></div>';
+        }
+      });
+      document.getElementById('healthBar').innerHTML = barHtml;
+
+      // --- Legends (shared format) ---
+      var legendHtml = '';
+      order.forEach(function(k) {
+        if (cats[k] > 0) {
+          legendHtml += '<span class="health-legend-item"><span class="health-legend-dot" style="background:' + colors[k] + '"></span>' +
+            labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
+        }
+      });
+      document.getElementById('donutLegend').innerHTML = legendHtml;
+      document.getElementById('barLegend').innerHTML = legendHtml;
     }
 
     function renderLog(onDelete) {

@@ -1369,19 +1369,7 @@
 
       // --- Predicted weight (dotted, yellow/orange) ---
       var predPoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      html += '<polyline points="' + predPoints + '" fill="none" stroke="' + yellow + '" stroke-width="1" stroke-dasharray="4,4" opacity="0.4" />';
-
-      // Predicted 7-day moving average
-      if (predicted.length >= 7) {
-        var predMa = [];
-        for (var m = 0; m < predicted.length; m++) {
-          var ms = Math.max(0, m - 6);
-          var msum = 0;
-          for (var n = ms; n <= m; n++) msum += predicted[n].kg;
-          predMa.push(x(predicted[m].date) + ',' + y(msum / (m - ms + 1)));
-        }
-        html += '<polyline points="' + predMa.join(' ') + '" fill="none" stroke="' + yellow + '" stroke-width="2" stroke-dasharray="6,4" stroke-linejoin="round" />';
-      }
+      html += '<polyline points="' + predPoints + '" fill="none" stroke="' + yellow + '" stroke-width="1.5" stroke-dasharray="4,4" stroke-linejoin="round" />';
 
       // --- Actual weight (green) ---
       var actPoints = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');

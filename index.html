@@ -1299,8 +1299,9 @@
 
       var firstDateStr = weightEntries[0].date;
       var lastDateStr = weightEntries[weightEntries.length - 1].date;
-      var firstDate = new Date(firstDateStr);
-      var lastDate = new Date(lastDateStr);
+      function parseLocalDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); }
+      var firstDate = parseLocalDate(firstDateStr);
+      var lastDate = parseLocalDate(lastDateStr);
       var dateRange = lastDate - firstDate || 1;
 
       // Fetch calorie entries for the date range to calculate predicted weight
@@ -1322,12 +1323,13 @@
       var dailyBurn = getDailyBurn();
       var predicted = [];
       var calcWeight = weightEntries[0].kg;
-      var yesterday = new Date(getDayKey());
-      yesterday.setDate(yesterday.getDate() - 1);
+      var ydKey = getDayKey();
+      var ydParts = ydKey.split('-');
+      var yesterday = new Date(parseInt(ydParts[0]), parseInt(ydParts[1]) - 1, parseInt(ydParts[2]) - 1);
       var predEnd = lastDate < yesterday ? lastDate : yesterday;
-      var d = new Date(firstDate);
+      var d = new Date(firstDate.getTime());
       while (d <= predEnd) {
-        var dayStr = d.toISOString().slice(0, 10);
+        var dayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         var dayData = calByDay[dayStr] || { eaten: 0, exercise: 0 };
         if (dayStr !== firstDateStr) {
           var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
@@ -1344,7 +1346,7 @@
       var maxKg = Math.ceil(Math.max.apply(null, allKgs) + 0.5);
       if (maxKg - minKg < 2) { minKg -= 1; maxKg += 1; }
 
-      function x(dt) { return pad.left + ((new Date(dt) - firstDate) / dateRange) * cw; }
+      function x(dt) { return pad.left + ((parseLocalDate(dt) - firstDate) / dateRange) * cw; }
       function y(kg) { return pad.top + ch - ((kg - minKg) / (maxKg - minKg)) * ch; }
 
       var html = '';

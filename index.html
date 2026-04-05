@@ -200,7 +200,7 @@
           <button class="period-tab active" data-period="all">All</button>
           <button class="period-tab" data-period="90d">90 days</button>
           <button class="period-tab" data-period="30d">30 days</button>
-          <button class="period-tab" data-period="month">Month</button>
+          <button class="period-tab" data-period="month" id="weightMonthTab">Month</button>
         </div>
       </div>
       <div class="weight-chart-container">
@@ -1367,6 +1367,7 @@
       document.getElementById('historyView').style.display = 'none';
       document.getElementById('weightView').style.display = 'block';
       document.getElementById('weightDate').value = getDayKey();
+      document.getElementById('weightMonthTab').textContent = new Date().toLocaleString(undefined, { month: 'long' });
       loadWeight();
     }
 
@@ -1417,7 +1418,17 @@
         return d >= periodStart && d <= periodEnd;
       });
 
-      if (filtered.length < 2) {
+      // Find the most recent weight entry before the period (for calculated starting point)
+      var seedWeight = null;
+      for (var si = weightEntries.length - 1; si >= 0; si--) {
+        if (parseLocalDate(weightEntries[si].date) < periodStart) {
+          seedWeight = weightEntries[si].kg;
+          break;
+        }
+      }
+      if (seedWeight === null && filtered.length > 0) seedWeight = filtered[0].kg;
+
+      if (filtered.length < 2 && seedWeight === null) {
         svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="14">Need at least 2 entries for chart</text>';
         return;
       }
@@ -1453,7 +1464,7 @@
       // Build predicted weight day by day from first weigh-in (up to today)
       var dailyBurn = getDailyBurn();
       var predicted = [];
-      var calcWeight = filtered[0].kg;
+      var calcWeight = seedWeight;
       var ydKey = getDayKey();
       var ydParts = ydKey.split('-');
       var yesterday = new Date(parseInt(ydParts[0]), parseInt(ydParts[1]) - 1, parseInt(ydParts[2]) - 1);
@@ -1463,10 +1474,8 @@
         var dayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         var dayData = calByDay[dayStr];
         if (dayData) {
-          if (dayStr !== firstDateStr) {
-            var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
-            calcWeight += netSurplus / 7000;
-          }
+          var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
+          calcWeight += netSurplus / 7000;
           predicted.push({ date: dayStr, kg: calcWeight });
         }
         d.setDate(d.getDate() + 1);

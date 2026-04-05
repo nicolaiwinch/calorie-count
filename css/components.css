@@ -510,8 +510,8 @@ select.user-picker-input {
 
 .health-dot-red { background: var(--color-red); }
 .health-dot-orange { background: var(--color-yellow); }
-.health-dot-yellow { background: #5bc0de; }
-.health-dot-green { background: #2ecc71; }
+.health-dot-yellow { background: #d4c84e; }
+.health-dot-green { background: var(--color-green); }
 
 /* Healthiness dot in log entries */
 .log-health-dot {

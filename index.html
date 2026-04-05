@@ -519,7 +519,7 @@
       }
     }
 
-    var HEALTH_COLORS = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#5bc0de', green: '#2ecc71' };
+    var HEALTH_COLORS = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#d4c84e', green: 'var(--color-green)' };
 
     function healthDotHtml(entry) {
       if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food') return '';
@@ -567,14 +567,14 @@
       container.style.display = 'flex';
 
       var colors = {
-        red: 'var(--color-red)',
+        green: 'var(--color-green)',
+        yellow: '#d4c84e',
         orange: 'var(--color-yellow)',
-        yellow: '#5bc0de',
-        green: '#2ecc71',
+        red: 'var(--color-red)',
         none: 'var(--border-subtle)'
       };
-      var labels = { red: 'Red', orange: 'Orange', yellow: 'Blue', green: 'Green', none: 'Unrated' };
-      var order = ['red', 'orange', 'yellow', 'green', 'none'];
+      var labels = { green: 'Green', yellow: 'Yellow', orange: 'Orange', red: 'Red', none: 'Unrated' };
+      var order = ['green', 'yellow', 'orange', 'red', 'none'];
 
       // Calculate percentages
       var pcts = {};

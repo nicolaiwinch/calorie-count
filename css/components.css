@@ -523,34 +523,10 @@ select.user-picker-input {
   vertical-align: middle;
 }
 
-.log-entry-wrap {
-  margin-bottom: 8px;
-}
-
-.log-entry-wrap .log-entry {
-  margin-bottom: 0;
-}
-
-.log-entry-wrap:has(.log-health-pick-row) .log-entry {
-  border-radius: 12px 12px 0 0;
-}
-
-.log-health-pick-row {
+.log-health-dots {
   display: flex;
   gap: 8px;
-  padding: 8px 16px 12px;
-  background: var(--bg-card);
-  border-radius: 0 0 12px 12px;
-  margin-top: -8px;
-}
-
-.log-health-pick-btn {
-  flex: 1;
-  height: 28px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-  opacity: 0.4;
+  margin-right: 10px;
 }
 
 /* Healthiness charts */

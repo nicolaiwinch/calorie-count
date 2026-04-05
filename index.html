@@ -513,15 +513,15 @@
       return '';
     }
 
-    function healthPickerRowHtml(entry) {
+    function healthPickerHtml(entry) {
       if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food' || entry.healthiness) return '';
       var dots = '';
       ['red', 'orange', 'yellow', 'green'].forEach(function(h) {
-        dots += '<button class="log-health-pick-btn" data-entry-id="' + entry.id +
+        dots += '<button class="health-dot log-health-pick-btn" data-entry-id="' + entry.id +
           '" data-entry-day="' + entry.time.slice(0, 10) +
           '" data-health="' + h + '" style="background:' + HEALTH_COLORS[h] + '"></button>';
       });
-      return '<div class="log-health-pick-row">' + dots + '</div>';
+      return '<div class="log-health-dots">' + dots + '</div>';
     }
 
     function updateHealthCharts(ents) {
@@ -602,12 +602,12 @@
         var dateStr = livePeriod !== 'day'
           ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
           : '';
-        return '<div class="log-entry-wrap"><div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
           healthDotHtml(e) + escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
-          '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
+          '</div></div><div style="display:flex;align-items:center">' +
+          healthPickerHtml(e) + '<div class="log-entry-cal ' +
           cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
-          e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>' +
-          healthPickerRowHtml(e) + '</div>';
+          e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>';
       }).join('');
       container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
         btn.addEventListener('click', async function() {

@@ -1425,7 +1425,7 @@
       // Predicted dots + tap targets
       predicted.forEach(function(e) {
         var actual = actualByDate[e.date];
-        var overlaps = actual !== undefined && Math.abs(actual - e.kg) < 0.15;
+        var overlaps = actual !== undefined && actual.toFixed(1) === e.kg.toFixed(1);
         if (overlaps) {
           html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="5" fill="none" stroke="' + yellow + '" stroke-width="1.5" />';
         } else {

@@ -93,15 +93,6 @@
       </div>
     </div>
 
-    <div class="burn-bar-container">
-      <div class="burn-bar-label">
-        <span>Day progress (midnight – midnight)</span>
-        <span id="burnBarPct">0%</span>
-      </div>
-      <div class="burn-bar">
-        <div class="burn-bar-fill" id="burnBarFill"></div>
-      </div>
-    </div>
 
     <div class="actions">
       <button class="btn btn-food" id="btnFood">+ Food</button>
@@ -408,8 +399,6 @@
       document.querySelectorAll('#livePeriodTabs .period-tab').forEach(function(t) {
         t.classList.toggle('active', t.dataset.period === period);
       });
-      // Show/hide burn bar (only for day)
-      document.querySelector('.burn-bar-container').style.display = period === 'day' ? '' : 'none';
       loadLiveEntries().then(refresh);
     }
 
@@ -498,12 +487,6 @@
       document.getElementById('eatenStat').textContent = liveTotals.eaten;
       document.getElementById('exerciseStat').textContent = liveTotals.exercise;
 
-      if (livePeriod === 'day') {
-        var pct = Math.round(burn.fraction * 100);
-        document.getElementById('burnBarFill').style.width = pct + '%';
-        document.getElementById('burnBarPct').textContent = pct + '%';
-      }
-
       var userLabel = document.getElementById('currentUserLabel');
       if (userLabel) userLabel.textContent = getCurrentUser() || 'No user';
 
@@ -573,7 +556,7 @@
         red: 'var(--color-red)',
         none: 'var(--border-subtle)'
       };
-      var labels = { green: 'Green', yellow: 'Yellow', orange: 'Orange', red: 'Red', none: 'Unrated' };
+      var labels = { green: 'Healthy', yellow: 'Good pick', orange: 'Comfort', red: 'Junk', none: 'Unrated' };
       var order = ['green', 'yellow', 'orange', 'red', 'none'];
 
       // Calculate percentages
@@ -879,7 +862,7 @@
     function getTodaySections() {
       if (!todaySections) {
         var app = document.getElementById('appMain');
-        todaySections = app.querySelectorAll(':scope > .live-period-tabs-container, :scope > .header, :scope > .stats-row, :scope > .burn-bar-container, :scope > .actions, :scope > .log-section, :scope > .history-link-container');
+        todaySections = app.querySelectorAll(':scope > .live-period-tabs-container, :scope > .header, :scope > .stats-row, :scope > .actions, :scope > .log-section, :scope > .history-link-container');
       }
       return todaySections;
     }
@@ -1214,8 +1197,6 @@
       viewingDate = null;
       document.getElementById('historyView').style.display = 'none';
       getTodaySections().forEach(function(el) { el.style.display = ''; });
-      // Restore burn bar visibility based on live period
-      document.querySelector('.burn-bar-container').style.display = livePeriod === 'day' ? '' : 'none';
       loadLiveEntries().then(refresh);
     }
 

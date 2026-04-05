@@ -632,13 +632,8 @@ select.user-picker-input {
   min-width: 0;
 }
 
-.weight-input:first-child {
+.weight-input-row .weight-input {
   flex: 1;
-}
-
-.weight-date-input {
-  width: 130px;
-  flex-shrink: 0;
 }
 
 .weight-input:focus { border-color: var(--border-focus); }

@@ -688,8 +688,8 @@
       var hasUnrated = cats.none > 0;
       var healthyGoal = (userProfile && userProfile.healthy_goal_pct) || 0;
       var junkLimit = (userProfile && userProfile.junk_limit_pct) || 0;
-      var leftEmoji = '';
-      var rightEmoji = '';
+      var leftEmoji = '', leftColor = '';
+      var rightEmoji = '', rightColor = '';
       var goalsHtml = '';
 
       if (!hasUnrated && (healthyGoal > 0 || junkLimit > 0)) {
@@ -703,6 +703,7 @@
           else if (hDiff > 0) { hColor = 'var(--color-green)'; hEmoji = '😊'; }
           else { hColor = 'var(--color-red)'; hEmoji = '😞'; }
           leftEmoji = hEmoji;
+          leftColor = hColor;
           goalsHtml += '<span class="health-legend-item" style="color:' + hColor + '">' +
             'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
         }
@@ -713,13 +714,19 @@
           else if (jDiff < 0) { jColor = 'var(--color-green)'; jEmoji = '😊'; }
           else { jColor = 'var(--color-red)'; jEmoji = '😠'; }
           rightEmoji = jEmoji;
+          rightColor = jColor;
           goalsHtml += '<span class="health-legend-item" style="color:' + jColor + '">' +
             'Junk ' + junkPct + '/' + junkLimit + '%</span>';
         }
       }
 
-      document.getElementById(prefix + 'healthLeftEmoji').textContent = leftEmoji;
-      document.getElementById(prefix + 'healthRightEmoji').textContent = rightEmoji;
+      var leftEl = document.getElementById(prefix + 'healthLeftEmoji');
+      var rightEl = document.getElementById(prefix + 'healthRightEmoji');
+      leftEl.textContent = leftEmoji;
+      rightEl.textContent = rightEmoji;
+      var glowStyle = function(c) { return c ? '0 0 6px ' + c + ', 0 0 12px ' + c : 'none'; };
+      leftEl.style.textShadow = glowStyle(leftColor);
+      rightEl.style.textShadow = glowStyle(rightColor);
       document.getElementById(prefix + 'barLegend').innerHTML = legendHtml;
       document.getElementById(prefix + 'barGoals').innerHTML = goalsHtml;
     }

@@ -1318,12 +1318,14 @@
         else calByDay[day].exercise += e.cal;
       });
 
-      // Build predicted weight day by day from first weigh-in
+      // Build predicted weight day by day from first weigh-in (up to today)
       var dailyBurn = getDailyBurn();
       var predicted = [];
       var calcWeight = weightEntries[0].kg;
+      var today = new Date(getDayKey());
+      var predEnd = lastDate < today ? lastDate : today;
       var d = new Date(firstDate);
-      while (d <= lastDate) {
+      while (d <= predEnd) {
         var dayStr = d.toISOString().slice(0, 10);
         var dayData = calByDay[dayStr] || { eaten: 0, exercise: 0 };
         if (dayStr !== firstDateStr) {

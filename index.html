@@ -667,8 +667,9 @@
       if (healthyGoal > 0 || junkLimit > 0) {
         if (healthyGoal > 0) {
           var hColor, hEmoji;
-          if (healthyPct >= healthyGoal) { hColor = 'var(--color-green)'; hEmoji = '😊'; }
-          else if (healthyPct >= healthyGoal - NEAR) { hColor = 'var(--color-yellow)'; hEmoji = '😐'; }
+          var hDiff = healthyPct - healthyGoal;
+          if (Math.abs(hDiff) <= NEAR) { hColor = 'var(--color-yellow)'; hEmoji = '😐'; }
+          else if (hDiff > 0) { hColor = 'var(--color-green)'; hEmoji = '😊'; }
           else { hColor = 'var(--color-red)'; hEmoji = '😞'; }
           leftEmoji = hEmoji;
           legendHtml += '<span class="health-legend-item" style="color:' + hColor + '">' +
@@ -676,8 +677,9 @@
         }
         if (junkLimit > 0) {
           var jColor, jEmoji;
-          if (junkPct <= junkLimit) { jColor = 'var(--color-green)'; jEmoji = '😊'; }
-          else if (junkPct <= junkLimit + NEAR) { jColor = 'var(--color-yellow)'; jEmoji = '😐'; }
+          var jDiff = junkPct - junkLimit;
+          if (Math.abs(jDiff) <= NEAR) { jColor = 'var(--color-yellow)'; jEmoji = '😐'; }
+          else if (jDiff < 0) { jColor = 'var(--color-green)'; jEmoji = '😊'; }
           else { jColor = 'var(--color-red)'; jEmoji = '😠'; }
           rightEmoji = jEmoji;
           legendHtml += '<span class="health-legend-item" style="color:' + jColor + '">' +

@@ -195,12 +195,15 @@
         <button class="weight-add-btn" id="btnAddWeight">+</button>
       </div>
 
-      <div style="display:flex;justify-content:center;padding:8px 16px 0">
+      <div style="display:flex;justify-content:center;align-items:center;gap:12px;padding:8px 16px 0">
         <div class="history-period-tabs" id="weightPeriodTabs">
           <button class="period-tab active" data-period="all">All</button>
-          <button class="period-tab" data-period="90d">90 days</button>
-          <button class="period-tab" data-period="30d">30 days</button>
           <button class="period-tab" data-period="month" id="weightMonthTab">Month</button>
+        </div>
+        <div id="weightMonthNav" style="display:none;align-items:center;gap:8px">
+          <button class="history-nav-btn" id="btnWeightMonthPrev">&lsaquo;</button>
+          <span id="weightMonthLabel" style="font-size:13px;min-width:90px;text-align:center;opacity:0.6"></span>
+          <button class="history-nav-btn" id="btnWeightMonthNext">&rsaquo;</button>
         </div>
       </div>
       <div class="weight-chart-container">
@@ -1361,13 +1364,15 @@
     // ===== weight view =====
     var weightEntries = [];
     var weightChartPeriod = 'all';
+    var weightMonthOffset = 0; // 0 = current month, -1 = last month, etc.
 
     function showWeight() {
       getTodaySections().forEach(function(el) { el.style.display = 'none'; });
       document.getElementById('historyView').style.display = 'none';
       document.getElementById('weightView').style.display = 'block';
       document.getElementById('weightDate').value = getDayKey();
-      document.getElementById('weightMonthTab').textContent = new Date().toLocaleString(undefined, { month: 'long' });
+      weightMonthOffset = 0;
+      updateWeightMonthLabel();
       loadWeight();
     }
 
@@ -1381,6 +1386,20 @@
       weightEntries = await apiGetWeight(currentUser);
       await renderWeightChart();
       renderWeightLog();
+    }
+
+    function getWeightMonth() {
+      var d = new Date();
+      d.setMonth(d.getMonth() + weightMonthOffset);
+      return d;
+    }
+
+    function updateWeightMonthLabel() {
+      var m = getWeightMonth();
+      var label = m.toLocaleString(undefined, { month: 'long', year: 'numeric' });
+      document.getElementById('weightMonthLabel').textContent = label;
+      // Disable next arrow if viewing current month
+      document.getElementById('btnWeightMonthNext').disabled = (weightMonthOffset >= 0);
     }
 
     async function handleAddWeight() {
@@ -1400,12 +1419,11 @@
       // Determine the X axis window based on period
       var today = new Date(); today.setHours(0,0,0,0);
       var periodStart, periodEnd = today;
-      if (weightChartPeriod === '30d') {
-        periodStart = new Date(today); periodStart.setDate(periodStart.getDate() - 30);
-      } else if (weightChartPeriod === '90d') {
-        periodStart = new Date(today); periodStart.setDate(periodStart.getDate() - 90);
-      } else if (weightChartPeriod === 'month') {
-        periodStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      if (weightChartPeriod === 'month') {
+        var m = getWeightMonth();
+        periodStart = new Date(m.getFullYear(), m.getMonth(), 1);
+        periodEnd = new Date(m.getFullYear(), m.getMonth() + 1, 0); // last day of month
+        if (periodEnd > today) periodEnd = today;
       } else {
         // all time: span from first to last entry
         periodStart = weightEntries.length > 0 ? parseLocalDate(weightEntries[0].date) : today;
@@ -1669,8 +1687,23 @@
             document.getElementById('weightPeriodTabs').querySelectorAll('.period-tab').forEach(function(t) { t.classList.remove('active'); });
             tab.classList.add('active');
             weightChartPeriod = tab.dataset.period;
+            weightMonthOffset = 0;
+            updateWeightMonthLabel();
+            document.getElementById('weightMonthNav').style.display = weightChartPeriod === 'month' ? 'flex' : 'none';
             renderWeightChart();
           });
+        });
+        document.getElementById('btnWeightMonthPrev').addEventListener('click', function() {
+          weightMonthOffset--;
+          updateWeightMonthLabel();
+          renderWeightChart();
+        });
+        document.getElementById('btnWeightMonthNext').addEventListener('click', function() {
+          if (weightMonthOffset < 0) {
+            weightMonthOffset++;
+            updateWeightMonthLabel();
+            renderWeightChart();
+          }
         });
 
         ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(function(id) {

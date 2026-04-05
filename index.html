@@ -153,6 +153,19 @@
         </div>
       </div>
 
+      <!-- Healthiness charts for history view -->
+      <div id="hist_healthChartsContainer" style="display:none">
+        <div class="health-bar-container">
+          <div class="health-chart-label">Food Healthiness</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span id="hist_healthLeftEmoji" style="font-size:18px;margin-top:-4px"></span>
+            <div class="health-bar" id="hist_healthBar" style="flex:1"></div>
+            <span id="hist_healthRightEmoji" style="font-size:18px;margin-top:-4px"></span>
+          </div>
+          <div class="health-legend" id="hist_barLegend"></div>
+        </div>
+      </div>
+
       <div class="actions" id="historyActions">
         <button class="btn btn-food" id="btnHistoryFood">+ Food</button>
         <button class="btn btn-exercise" id="btnHistoryExercise">+ Exercise</button>
@@ -597,8 +610,9 @@
       return '<div class="log-health-dots">' + dots + '</div>';
     }
 
-    function updateHealthCharts(ents) {
-      var container = document.getElementById('healthChartsContainer');
+    function updateHealthCharts(ents, prefix) {
+      prefix = prefix || '';
+      var container = document.getElementById(prefix + 'healthChartsContainer');
       if (!userProfile || !userProfile.track_healthiness) {
         container.style.display = 'none';
         return;
@@ -646,7 +660,7 @@
           barHtml += '<div class="health-bar-seg" style="width:' + pcts[k] + '%;background:' + colors[k] + '"></div>';
         }
       });
-      document.getElementById('healthBar').innerHTML = barHtml;
+      document.getElementById(prefix + 'healthBar').innerHTML = barHtml;
 
       // --- Legend ---
       var legendHtml = '';
@@ -686,9 +700,9 @@
             'Junk ' + junkPct + '/' + junkLimit + '%</span>';
         }
       }
-      document.getElementById('healthLeftEmoji').textContent = leftEmoji;
-      document.getElementById('healthRightEmoji').textContent = rightEmoji;
-      document.getElementById('barLegend').innerHTML = legendHtml;
+      document.getElementById(prefix + 'healthLeftEmoji').textContent = leftEmoji;
+      document.getElementById(prefix + 'healthRightEmoji').textContent = rightEmoji;
+      document.getElementById(prefix + 'barLegend').innerHTML = legendHtml;
     }
 
     function renderLog(onDelete) {
@@ -1165,6 +1179,8 @@
         ? (totalBurn + ' burn \u2013 ' + eaten + ' eaten + ' + exercise + ' exercise')
         : (days + ' days \u00b7 avg ' + Math.round(eaten / days) + ' eaten/day');
       document.getElementById('historySummaryLine').textContent = summary;
+
+      updateHealthCharts(historyEntries, 'hist_');
 
       var container = document.getElementById('historyLogEntries');
 

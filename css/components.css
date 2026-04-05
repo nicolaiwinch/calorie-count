@@ -532,7 +532,8 @@ select.user-picker-input {
 }
 
 /* Healthiness charts */
-#healthChartsContainer {
+#healthChartsContainer,
+#hist_healthChartsContainer {
   display: flex;
   gap: 16px;
   padding: 0 16px;

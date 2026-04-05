@@ -197,10 +197,10 @@
 
       <div style="display:flex;justify-content:center;padding:8px 16px 0">
         <div class="history-period-tabs" id="weightPeriodTabs">
-          <button class="period-tab active" data-period="30d">30 days</button>
+          <button class="period-tab active" data-period="all">All</button>
           <button class="period-tab" data-period="90d">90 days</button>
+          <button class="period-tab" data-period="30d">30 days</button>
           <button class="period-tab" data-period="month">Month</button>
-          <button class="period-tab" data-period="all">All</button>
         </div>
       </div>
       <div class="weight-chart-container">
@@ -1360,7 +1360,7 @@
 
     // ===== weight view =====
     var weightEntries = [];
-    var weightChartPeriod = '30d';
+    var weightChartPeriod = 'all';
 
     function showWeight() {
       getTodaySections().forEach(function(el) { el.style.display = 'none'; });

@@ -89,12 +89,17 @@
       <div class="health-bar-container">
         <div class="health-chart-label">Food Healthiness</div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span id="healthLeftEmoji" style="font-size:18px;margin-top:-4px"></span>
+          <div style="text-align:center">
+            <div id="healthLeftEmoji" style="font-size:18px"></div>
+            <div id="barGoalLeft" style="font-size:10px;margin-top:2px"></div>
+          </div>
           <div class="health-bar" id="healthBar" style="flex:1"></div>
-          <span id="healthRightEmoji" style="font-size:18px;margin-top:-4px"></span>
+          <div style="text-align:center">
+            <div id="healthRightEmoji" style="font-size:18px"></div>
+            <div id="barGoalRight" style="font-size:10px;margin-top:2px"></div>
+          </div>
         </div>
         <div class="health-legend" id="barLegend"></div>
-        <div id="barGoals" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px"></div>
       </div>
     </div>
 
@@ -159,12 +164,17 @@
         <div class="health-bar-container">
           <div class="health-chart-label">Food Healthiness</div>
           <div style="display:flex;align-items:center;gap:6px">
-            <span id="hist_healthLeftEmoji" style="font-size:18px;margin-top:-4px"></span>
+            <div style="text-align:center">
+              <div id="hist_healthLeftEmoji" style="font-size:18px"></div>
+              <div id="hist_barGoalLeft" style="font-size:10px;margin-top:2px"></div>
+            </div>
             <div class="health-bar" id="hist_healthBar" style="flex:1"></div>
-            <span id="hist_healthRightEmoji" style="font-size:18px;margin-top:-4px"></span>
+            <div style="text-align:center">
+              <div id="hist_healthRightEmoji" style="font-size:18px"></div>
+              <div id="hist_barGoalRight" style="font-size:10px;margin-top:2px"></div>
+            </div>
           </div>
           <div class="health-legend" id="hist_barLegend"></div>
-          <div id="hist_barGoals" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px"></div>
         </div>
       </div>
 
@@ -686,9 +696,8 @@
       var hasUnrated = cats.none > 0;
       var healthyGoal = (userProfile && userProfile.healthy_goal_pct) || 0;
       var junkLimit = (userProfile && userProfile.junk_limit_pct) || 0;
-      var leftEmoji = '', leftColor = '';
-      var rightEmoji = '', rightColor = '';
-      var goalsHtml = '';
+      var leftEmoji = '', leftColor = '', leftGoal = '';
+      var rightEmoji = '', rightColor = '', rightGoal = '';
 
       if (!hasUnrated && (healthyGoal > 0 || junkLimit > 0)) {
         var healthyPct = Math.round(pcts.green + pcts.yellow);
@@ -702,9 +711,7 @@
           else { hColor = 'var(--color-red)'; hEmoji = '😞'; }
           leftEmoji = hEmoji;
           leftColor = hColor;
-          goalsHtml += '<span style="color:' + hColor + '">Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
-        } else {
-          goalsHtml += '<span></span>';
+          leftGoal = healthyPct + '/' + healthyGoal + '%';
         }
         if (junkLimit > 0) {
           var jColor, jEmoji;
@@ -714,7 +721,7 @@
           else { jColor = 'var(--color-red)'; jEmoji = '😠'; }
           rightEmoji = jEmoji;
           rightColor = jColor;
-          goalsHtml += '<span style="color:' + jColor + '">Junk ' + junkPct + '/' + junkLimit + '%</span>';
+          rightGoal = junkPct + '/' + junkLimit + '%';
         }
       }
 
@@ -725,8 +732,13 @@
       var glowStyle = function(c) { return c ? '0 0 6px ' + c + ', 0 0 12px ' + c : 'none'; };
       leftEl.style.textShadow = glowStyle(leftColor);
       rightEl.style.textShadow = glowStyle(rightColor);
+      var leftGoalEl = document.getElementById(prefix + 'barGoalLeft');
+      var rightGoalEl = document.getElementById(prefix + 'barGoalRight');
+      leftGoalEl.textContent = leftGoal;
+      leftGoalEl.style.color = leftColor;
+      rightGoalEl.textContent = rightGoal;
+      rightGoalEl.style.color = rightColor;
       document.getElementById(prefix + 'barLegend').innerHTML = legendHtml;
-      document.getElementById(prefix + 'barGoals').innerHTML = goalsHtml;
     }
 
     function renderLog(onDelete) {

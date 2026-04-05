@@ -188,7 +188,7 @@
       </div>
 
       <div style="padding:16px 16px 0">
-        <input type="date" id="weightDate" class="weight-input" style="width:100%">
+        <input type="date" id="weightDate" class="weight-input" style="width:100%;box-sizing:border-box">
       </div>
       <div class="weight-input-row">
         <input type="number" step="0.1" id="weightInput" placeholder="kg" class="weight-input" autocomplete="off">
@@ -1405,6 +1405,7 @@
       var m = getWeightMonth();
       var label = m.toLocaleString(undefined, { month: 'long', year: 'numeric' });
       document.getElementById('weightMonthLabel').textContent = label;
+      document.getElementById('weightMonthTab').textContent = m.toLocaleString(undefined, { month: 'long' });
       // Disable next arrow if viewing current month
       document.getElementById('btnWeightMonthNext').disabled = (weightMonthOffset >= 0);
     }

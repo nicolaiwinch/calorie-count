@@ -1368,19 +1368,9 @@
       var green = getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim();
       var yellow = getComputedStyle(document.documentElement).getPropertyValue('--color-yellow').trim();
 
-      // --- Predicted weight (one dot per day, yellow/orange) ---
-      predicted.forEach(function(e) {
-        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="2" fill="' + yellow + '" />';
-        var dl = new Date(e.date + 'T00:00:00');
-        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
-        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';
-      });
-
-      // --- Actual weight (green) ---
+      // --- Layer 1: 7-day moving averages (behind everything) ---
+      // Actual MA
       var actPoints = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.25" />';
-
-      // Actual 7-day moving average
       if (weightEntries.length >= 7) {
         var maPoints = [];
         for (var j = 0; j < weightEntries.length; j++) {
@@ -1389,14 +1379,28 @@
           for (var k = s; k <= j; k++) sum += weightEntries[k].kg;
           maPoints.push(x(weightEntries[j].date) + ',' + y(sum / (j - s + 1)));
         }
-        html += '<polyline points="' + maPoints.join(' ') + '" fill="none" stroke="' + green + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />';
-      } else {
-        html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="2" stroke-linejoin="round" />';
+        html += '<polyline points="' + maPoints.join(' ') + '" fill="none" stroke="' + green + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.5" />';
       }
+
+      // --- Layer 2: thin lines + dots on top ---
+      // Predicted thin line
+      var predLinePoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
+      html += '<polyline points="' + predLinePoints + '" fill="none" stroke="' + yellow + '" stroke-width="1" stroke-linejoin="round" opacity="0.3" />';
+
+      // Predicted dots + tap targets
+      predicted.forEach(function(e) {
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="2" fill="' + yellow + '" />';
+        var dl = new Date(e.date + 'T00:00:00');
+        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg (calc)';
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';
+      });
+
+      // Actual thin line
+      html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.3" />';
 
       // Actual dots + tap targets
       weightEntries.forEach(function(e) {
-        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.4" />';
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.5" />';
         var dl = new Date(e.date + 'T00:00:00');
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';

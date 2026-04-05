@@ -657,7 +657,7 @@
         red: 'var(--color-red)',
         none: 'var(--border-subtle)'
       };
-      var labels = { green: 'Healthy', yellow: 'Good pick', orange: 'Comfort', red: 'Junk', none: 'Unrated' };
+      var labels = { green: 'Healthy', yellow: 'Good', orange: 'OK', red: 'Junk', none: 'N/A' };
       var order = ['green', 'yellow', 'orange', 'red', 'none'];
 
       // Calculate percentages
@@ -677,7 +677,7 @@
       var legendHtml = '';
       order.forEach(function(k) {
         if (cats[k] > 0) {
-          legendHtml += '<span class="health-legend-item"><span class="health-legend-dot" style="background:' + colors[k] + '"></span>' +
+          legendHtml += '<span class="health-legend-item" style="color:' + colors[k] + ';opacity:0.8">' +
             labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
         }
       });

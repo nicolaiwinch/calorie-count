@@ -1391,7 +1391,7 @@
 
       // Predicted dots + tap targets
       predicted.forEach(function(e) {
-        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="4" fill="none" stroke="' + yellow + '" stroke-width="1.5" />';
+        html += '<circle cx="' + x(e.date) + '" cy="' + (y(e.kg) - 3) + '" r="3" fill="' + yellow + '" opacity="0.5" />';
         var dl = new Date(e.date + 'T00:00:00');
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg (calc)';
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';

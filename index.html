@@ -1389,9 +1389,19 @@
       var predLinePoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
       html += '<polyline points="' + predLinePoints + '" fill="none" stroke="' + yellow + '" stroke-width="1" stroke-linejoin="round" opacity="0.3" />';
 
+      // Build lookup of actual weights by date for overlap detection
+      var actualByDate = {};
+      weightEntries.forEach(function(e) { actualByDate[e.date] = e.kg; });
+
       // Predicted dots + tap targets
       predicted.forEach(function(e) {
-        html += '<circle cx="' + x(e.date) + '" cy="' + (y(e.kg) - 3) + '" r="3" fill="' + yellow + '" opacity="0.5" />';
+        var actual = actualByDate[e.date];
+        var overlaps = actual !== undefined && Math.abs(actual - e.kg) < 0.5;
+        if (overlaps) {
+          html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="5" fill="none" stroke="' + yellow + '" stroke-width="1.5" />';
+        } else {
+          html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + yellow + '" opacity="0.5" />';
+        }
         var dl = new Date(e.date + 'T00:00:00');
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg (calc)';
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';

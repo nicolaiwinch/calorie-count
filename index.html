@@ -1322,8 +1322,9 @@
       var dailyBurn = getDailyBurn();
       var predicted = [];
       var calcWeight = weightEntries[0].kg;
-      var today = new Date(getDayKey());
-      var predEnd = lastDate < today ? lastDate : today;
+      var yesterday = new Date(getDayKey());
+      yesterday.setDate(yesterday.getDate() - 1);
+      var predEnd = lastDate < yesterday ? lastDate : yesterday;
       var d = new Date(firstDate);
       while (d <= predEnd) {
         var dayStr = d.toISOString().slice(0, 10);

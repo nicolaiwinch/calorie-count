@@ -1461,12 +1461,14 @@
       var d = new Date(firstDate.getTime());
       while (d <= predEnd) {
         var dayStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        var dayData = calByDay[dayStr] || { eaten: 0, exercise: 0 };
-        if (dayStr !== firstDateStr) {
-          var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
-          calcWeight += netSurplus / 7000;
+        var dayData = calByDay[dayStr];
+        if (dayData) {
+          if (dayStr !== firstDateStr) {
+            var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
+            calcWeight += netSurplus / 7000;
+          }
+          predicted.push({ date: dayStr, kg: calcWeight });
         }
-        predicted.push({ date: dayStr, kg: calcWeight });
         d.setDate(d.getDate() + 1);
       }
 

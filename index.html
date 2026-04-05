@@ -514,10 +514,12 @@
     }
 
     function healthPickerHtml(entry) {
-      if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food' || entry.healthiness) return '';
+      if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food') return '';
       var dots = '';
       ['red', 'orange', 'yellow', 'green'].forEach(function(h) {
-        dots += '<button class="health-dot log-health-pick-btn" data-entry-id="' + entry.id +
+        var sel = entry.healthiness === h;
+        dots += '<button class="health-dot log-health-pick-btn' + (sel ? ' selected' : '') +
+          '" data-entry-id="' + entry.id +
           '" data-entry-day="' + entry.time.slice(0, 10) +
           '" data-health="' + h + '" style="background:' + HEALTH_COLORS[h] + '"></button>';
       });
@@ -603,7 +605,7 @@
           ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
           : '';
         return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
-          healthDotHtml(e) + escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
+          escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
           '</div></div><div style="display:flex;align-items:center">' +
           healthPickerHtml(e) + '<div class="log-entry-cal ' +
           cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +

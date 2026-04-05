@@ -616,7 +616,7 @@
         container.innerHTML = '<div class="empty-log">No entries yet</div>';
         return;
       }
-      var sorted = ents.slice().reverse();
+      var sorted = ents.slice().sort(function(a, b) { return new Date(b.time) - new Date(a.time); });
       container.innerHTML = sorted.map(function(e) {
         var sign = e.type === 'food' ? '-' : '+';
         var cls = e.type === 'food' ? 'food' : 'exercise';

@@ -662,7 +662,7 @@
       });
       document.getElementById(prefix + 'healthBar').innerHTML = barHtml;
 
-      // --- Legend ---
+      // --- Legend (category percentages) ---
       var legendHtml = '';
       order.forEach(function(k) {
         if (cats[k] > 0) {
@@ -670,15 +670,19 @@
             labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
         }
       });
-      // --- Goal status + emojis ---
+
+      // --- Goal status + emojis (only when no unrated entries) ---
+      var hasUnrated = cats.none > 0;
       var healthyGoal = (userProfile && userProfile.healthy_goal_pct) || 0;
       var junkLimit = (userProfile && userProfile.junk_limit_pct) || 0;
-      var healthyPct = Math.round(pcts.green + pcts.yellow);
-      var junkPct = Math.round(pcts.red);
       var leftEmoji = '';
       var rightEmoji = '';
-      var NEAR = 5; // percent range for yellow
-      if (healthyGoal > 0 || junkLimit > 0) {
+      var goalsHtml = '';
+
+      if (!hasUnrated && (healthyGoal > 0 || junkLimit > 0)) {
+        var healthyPct = Math.round(pcts.green + pcts.yellow);
+        var junkPct = Math.round(pcts.red);
+        var NEAR = 5;
         if (healthyGoal > 0) {
           var hColor, hEmoji;
           var hDiff = healthyPct - healthyGoal;
@@ -686,7 +690,7 @@
           else if (hDiff > 0) { hColor = 'var(--color-green)'; hEmoji = '😊'; }
           else { hColor = 'var(--color-red)'; hEmoji = '😞'; }
           leftEmoji = hEmoji;
-          legendHtml += '<span class="health-legend-item" style="color:' + hColor + '">' +
+          goalsHtml += '<span class="health-legend-item" style="color:' + hColor + '">' +
             'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
         }
         if (junkLimit > 0) {
@@ -696,13 +700,20 @@
           else if (jDiff < 0) { jColor = 'var(--color-green)'; jEmoji = '😊'; }
           else { jColor = 'var(--color-red)'; jEmoji = '😠'; }
           rightEmoji = jEmoji;
-          legendHtml += '<span class="health-legend-item" style="color:' + jColor + '">' +
+          goalsHtml += '<span class="health-legend-item" style="color:' + jColor + '">' +
             'Junk ' + junkPct + '/' + junkLimit + '%</span>';
         }
       }
+
+      // Goals always on a separate line
+      var fullLegend = legendHtml;
+      if (goalsHtml) {
+        fullLegend += '<div class="health-legend" style="margin-top:4px">' + goalsHtml + '</div>';
+      }
+
       document.getElementById(prefix + 'healthLeftEmoji').textContent = leftEmoji;
       document.getElementById(prefix + 'healthRightEmoji').textContent = rightEmoji;
-      document.getElementById(prefix + 'barLegend').innerHTML = legendHtml;
+      document.getElementById(prefix + 'barLegend').innerHTML = fullLegend;
     }
 
     function renderLog(onDelete) {

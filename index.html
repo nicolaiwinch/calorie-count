@@ -1396,21 +1396,26 @@
       function parseLocalDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); }
 
       // Filter entries by selected period
-      var filtered = weightEntries;
-      if (weightChartPeriod !== 'all' && weightEntries.length > 0) {
-        var today = new Date(); today.setHours(0,0,0,0);
-        var cutoff;
-        if (weightChartPeriod === '30d') {
-          cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 30);
-        } else if (weightChartPeriod === '90d') {
-          cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 90);
-        } else if (weightChartPeriod === 'month') {
-          cutoff = new Date(today.getFullYear(), today.getMonth(), 1);
-        }
-        filtered = weightEntries.filter(function(e) {
-          return parseLocalDate(e.date) >= cutoff;
-        });
+      // Determine the X axis window based on period
+      var today = new Date(); today.setHours(0,0,0,0);
+      var periodStart, periodEnd = today;
+      if (weightChartPeriod === '30d') {
+        periodStart = new Date(today); periodStart.setDate(periodStart.getDate() - 30);
+      } else if (weightChartPeriod === '90d') {
+        periodStart = new Date(today); periodStart.setDate(periodStart.getDate() - 90);
+      } else if (weightChartPeriod === 'month') {
+        periodStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      } else {
+        // all time: span from first to last entry
+        periodStart = weightEntries.length > 0 ? parseLocalDate(weightEntries[0].date) : today;
+        periodEnd = weightEntries.length > 0 ? parseLocalDate(weightEntries[weightEntries.length - 1].date) : today;
+        if (periodEnd < today) periodEnd = today;
       }
+
+      var filtered = weightEntries.filter(function(e) {
+        var d = parseLocalDate(e.date);
+        return d >= periodStart && d <= periodEnd;
+      });
 
       if (filtered.length < 2) {
         svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="14">Need at least 2 entries for chart</text>';
@@ -1423,11 +1428,12 @@
       var cw = w - pad.left - pad.right;
       var ch = h - pad.top - pad.bottom;
 
-      var firstDateStr = filtered[0].date;
-      var lastDateStr = filtered[filtered.length - 1].date;
-      var firstDate = parseLocalDate(firstDateStr);
-      var lastDate = parseLocalDate(lastDateStr);
+      var firstDate = periodStart;
+      var lastDate = periodEnd;
       var dateRange = lastDate - firstDate || 1;
+      function toDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+      var firstDateStr = toDateStr(firstDate);
+      var lastDateStr = toDateStr(lastDate);
 
       // Fetch calorie entries for the date range to calculate predicted weight
       var calEntries = [];
@@ -1483,14 +1489,15 @@
         html += '<text x="' + (pad.left - 6) + '" y="' + (yy + 4) + '" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="11">' + kg + '</text>';
       }
 
-      // Date labels
-      var dateLabels = [filtered[0], filtered[filtered.length - 1]];
-      if (filtered.length > 4) dateLabels.splice(1, 0, filtered[Math.floor(filtered.length / 2)]);
-      dateLabels.forEach(function(e) {
-        var dl = new Date(e.date);
-        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-        html += '<text x="' + x(e.date) + '" y="' + (h - 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="11">' + label + '</text>';
-      });
+      // Date labels — evenly spaced across the period window
+      var numLabels = 3;
+      for (var li = 0; li < numLabels; li++) {
+        var labelTime = firstDate.getTime() + (dateRange * li / (numLabels - 1));
+        var labelDate = new Date(labelTime);
+        var labelStr = toDateStr(labelDate);
+        var label = labelDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        html += '<text x="' + x(labelStr) + '" y="' + (h - 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="11">' + label + '</text>';
+      }
 
       var green = getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim();
       var yellow = getComputedStyle(document.documentElement).getPropertyValue('--color-yellow').trim();

@@ -88,7 +88,11 @@
     <div id="healthChartsContainer" style="display:none">
       <div class="health-bar-container">
         <div class="health-chart-label">Food Healthiness</div>
-        <div class="health-bar" id="healthBar"></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="healthLeftEmoji" style="font-size:18px"></span>
+          <div class="health-bar" id="healthBar" style="flex:1"></div>
+          <span id="healthRightEmoji" style="font-size:18px"></span>
+        </div>
         <div class="health-legend" id="barLegend"></div>
       </div>
     </div>
@@ -652,23 +656,29 @@
             labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
         }
       });
-      // --- Goal status ---
+      // --- Goal status + emojis ---
       var healthyGoal = (userProfile && userProfile.healthy_goal_pct) || 0;
       var junkLimit = (userProfile && userProfile.junk_limit_pct) || 0;
+      var healthyPct = Math.round(pcts.green + pcts.yellow);
+      var junkPct = Math.round(pcts.red);
+      var leftEmoji = '';
+      var rightEmoji = '';
       if (healthyGoal > 0 || junkLimit > 0) {
-        var healthyPct = Math.round(pcts.green + pcts.yellow);
-        var junkPct = Math.round(pcts.red);
         if (healthyGoal > 0) {
           var met = healthyPct >= healthyGoal;
+          leftEmoji = met ? '😊' : '😞';
           legendHtml += '<span class="health-legend-item" style="color:' + (met ? 'var(--color-green)' : 'var(--color-yellow)') + '">' +
-            'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%' + (met ? ' ✓' : '') + '</span>';
+            'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
         }
         if (junkLimit > 0) {
           var under = junkPct <= junkLimit;
+          rightEmoji = under ? '😊' : '😠';
           legendHtml += '<span class="health-legend-item" style="color:' + (under ? 'var(--color-green)' : 'var(--color-red)') + '">' +
-            'Junk ' + junkPct + '/' + junkLimit + '%' + (under ? ' ✓' : '') + '</span>';
+            'Junk ' + junkPct + '/' + junkLimit + '%</span>';
         }
       }
+      document.getElementById('healthLeftEmoji').textContent = leftEmoji;
+      document.getElementById('healthRightEmoji').textContent = rightEmoji;
       document.getElementById('barLegend').innerHTML = legendHtml;
     }
 

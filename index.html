@@ -216,6 +216,10 @@
           <span>Track food healthiness</span>
         </label>
         <input type="number" id="profileWeeklyGoal" placeholder="Weekly weight loss goal (kg)" inputmode="decimal" step="0.1" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
+        <div class="picker-row" id="healthGoalsRow" style="display:none">
+          <input type="number" id="profileHealthyGoal" placeholder="Healthy+Good % goal" inputmode="numeric" min="0" max="100">
+          <input type="number" id="profileJunkLimit" placeholder="Junk % max" inputmode="numeric" min="0" max="100">
+        </div>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
           <button class="modal-btn modal-btn-add" id="profileSave">Save</button>
@@ -648,6 +652,23 @@
             labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
         }
       });
+      // --- Goal status ---
+      var healthyGoal = (userProfile && userProfile.healthy_goal_pct) || 0;
+      var junkLimit = (userProfile && userProfile.junk_limit_pct) || 0;
+      if (healthyGoal > 0 || junkLimit > 0) {
+        var healthyPct = Math.round(pcts.green + pcts.yellow);
+        var junkPct = Math.round(pcts.red);
+        if (healthyGoal > 0) {
+          var met = healthyPct >= healthyGoal;
+          legendHtml += '<span class="health-legend-item" style="color:' + (met ? 'var(--color-green)' : 'var(--color-yellow)') + '">' +
+            'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%' + (met ? ' ✓' : '') + '</span>';
+        }
+        if (junkLimit > 0) {
+          var under = junkPct <= junkLimit;
+          legendHtml += '<span class="health-legend-item" style="color:' + (under ? 'var(--color-green)' : 'var(--color-red)') + '">' +
+            'Junk ' + junkPct + '/' + junkLimit + '%' + (under ? ' ✓' : '') + '</span>';
+        }
+      }
       document.getElementById('barLegend').innerHTML = legendHtml;
     }
 
@@ -877,6 +898,9 @@
       }
       document.getElementById('profileHealthiness').checked = !!profile.track_healthiness;
       document.getElementById('profileWeeklyGoal').value = profile.weekly_kg_goal || '';
+      document.getElementById('profileHealthyGoal').value = profile.healthy_goal_pct || '';
+      document.getElementById('profileJunkLimit').value = profile.junk_limit_pct || '';
+      document.getElementById('healthGoalsRow').style.display = profile.track_healthiness ? 'flex' : 'none';
       updateBurnDisplay();
       document.getElementById('profileOverlay').classList.add('active');
     }
@@ -917,6 +941,8 @@
         pin: getUserProfile() ? (getUserProfile().pin || '') : '',
         track_healthiness: document.getElementById('profileHealthiness').checked,
         weekly_kg_goal: parseFloat(document.getElementById('profileWeeklyGoal').value) || 0,
+        healthy_goal_pct: parseInt(document.getElementById('profileHealthyGoal').value) || 0,
+        junk_limit_pct: parseInt(document.getElementById('profileJunkLimit').value) || 0,
       };
       userProfile = await apiSaveUser(userId, profile);
       document.getElementById('profileOverlay').classList.remove('active');
@@ -1526,6 +1552,9 @@
             document.getElementById('profileOverlay').classList.remove('active');
         });
         document.getElementById('profileSave').addEventListener('click', saveProfile);
+        document.getElementById('profileHealthiness').addEventListener('change', function() {
+          document.getElementById('healthGoalsRow').style.display = this.checked ? 'flex' : 'none';
+        });
 
         // Live period tabs
         document.querySelectorAll('#livePeriodTabs .period-tab').forEach(function(tab) {

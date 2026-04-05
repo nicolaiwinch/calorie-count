@@ -1349,13 +1349,11 @@
 
       var html = '';
 
-      // Grid lines
-      var steps = 4;
-      for (var i = 0; i <= steps; i++) {
-        var val = minKg + (maxKg - minKg) * (i / steps);
-        var yy = y(val);
+      // Grid lines (1 kg steps)
+      for (var kg = minKg; kg <= maxKg; kg++) {
+        var yy = y(kg);
         html += '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (w - pad.right) + '" y2="' + yy + '" stroke="rgba(255,255,255,0.06)" />';
-        html += '<text x="' + (pad.left - 6) + '" y="' + (yy + 4) + '" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="11">' + val.toFixed(1) + '</text>';
+        html += '<text x="' + (pad.left - 6) + '" y="' + (yy + 4) + '" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="11">' + kg + '</text>';
       }
 
       // Date labels

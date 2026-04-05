@@ -94,7 +94,7 @@
           <span id="healthRightEmoji" style="font-size:18px;margin-top:-4px"></span>
         </div>
         <div class="health-legend" id="barLegend"></div>
-        <div class="health-legend" id="barGoals" style="margin-top:4px"></div>
+        <div id="barGoals" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px"></div>
       </div>
     </div>
 
@@ -164,7 +164,7 @@
             <span id="hist_healthRightEmoji" style="font-size:18px;margin-top:-4px"></span>
           </div>
           <div class="health-legend" id="hist_barLegend"></div>
-          <div class="health-legend" id="hist_barGoals" style="margin-top:4px"></div>
+          <div id="hist_barGoals" style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px"></div>
         </div>
       </div>
 
@@ -702,8 +702,9 @@
           else { hColor = 'var(--color-red)'; hEmoji = '😞'; }
           leftEmoji = hEmoji;
           leftColor = hColor;
-          goalsHtml += '<span class="health-legend-item" style="color:' + hColor + '">' +
-            'Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
+          goalsHtml += '<span style="color:' + hColor + '">Healthy+Good ' + healthyPct + '/' + healthyGoal + '%</span>';
+        } else {
+          goalsHtml += '<span></span>';
         }
         if (junkLimit > 0) {
           var jColor, jEmoji;
@@ -713,8 +714,7 @@
           else { jColor = 'var(--color-red)'; jEmoji = '😠'; }
           rightEmoji = jEmoji;
           rightColor = jColor;
-          goalsHtml += '<span class="health-legend-item" style="color:' + jColor + '">' +
-            'Junk ' + junkPct + '/' + junkLimit + '%</span>';
+          goalsHtml += '<span style="color:' + jColor + '">Junk ' + junkPct + '/' + junkLimit + '%</span>';
         }
       }
 

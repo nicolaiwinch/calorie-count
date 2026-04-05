@@ -510,15 +510,18 @@
         var c = HEALTH_COLORS[entry.healthiness] || '';
         return '<span class="log-health-dot" style="background:' + c + '"></span>';
       }
-      // Show 4 dimmed clickable dots for untagged food
+      return '';
+    }
+
+    function healthPickerRowHtml(entry) {
+      if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food' || entry.healthiness) return '';
       var dots = '';
       ['red', 'orange', 'yellow', 'green'].forEach(function(h) {
-        dots += '<span class="log-health-dot log-health-pick" data-entry-id="' + entry.id +
+        dots += '<button class="log-health-pick-btn" data-entry-id="' + entry.id +
           '" data-entry-day="' + entry.time.slice(0, 10) +
-          '" data-health="' + h + '" style="background:' + HEALTH_COLORS[h] +
-          ';opacity:0.3;cursor:pointer"></span>';
+          '" data-health="' + h + '" style="background:' + HEALTH_COLORS[h] + '"></button>';
       });
-      return '<span class="log-health-dots-row">' + dots + '</span>';
+      return '<div class="log-health-pick-row">' + dots + '</div>';
     }
 
     function updateHealthCharts(ents) {
@@ -599,11 +602,12 @@
         var dateStr = livePeriod !== 'day'
           ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
           : '';
-        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+        return '<div class="log-entry-wrap"><div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
           healthDotHtml(e) + escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
           '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
           cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
-          e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>';
+          e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>' +
+          healthPickerRowHtml(e) + '</div>';
       }).join('');
       container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
         btn.addEventListener('click', async function() {
@@ -616,7 +620,7 @@
         });
       });
       // Clickable health dots for untagged food entries
-      container.querySelectorAll('.log-health-pick').forEach(function(dot) {
+      container.querySelectorAll('.log-health-pick-btn').forEach(function(dot) {
         dot.addEventListener('click', async function() {
           var entryId = dot.dataset.entryId;
           var entryDay = dot.dataset.entryDay;

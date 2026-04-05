@@ -1373,6 +1373,13 @@
       var predPoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
       html += '<polyline points="' + predPoints + '" fill="none" stroke="' + yellow + '" stroke-width="1.5" stroke-dasharray="4,4" stroke-linejoin="round" />';
 
+      // Tap targets for predicted line
+      predicted.forEach(function(e) {
+        var dl = new Date(e.date + 'T00:00:00');
+        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';
+      });
+
       // --- Actual weight (green) ---
       var actPoints = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
       html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.25" />';
@@ -1391,10 +1398,19 @@
         html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="2" stroke-linejoin="round" />';
       }
 
-      // Actual dots
+      // Actual dots + tap targets
       weightEntries.forEach(function(e) {
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.4" />';
+        var dl = new Date(e.date + 'T00:00:00');
+        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="10" fill="transparent" class="weight-tap" data-label="' + label + '" data-x="' + x(e.date) + '" data-y="' + y(e.kg) + '" />';
       });
+
+      // Tooltip (hidden initially)
+      html += '<g id="weightTooltip" style="display:none">';
+      html += '<rect id="ttBg" rx="6" ry="6" fill="rgba(0,0,0,0.8)" />';
+      html += '<text id="ttText" fill="white" font-size="12" text-anchor="middle"></text>';
+      html += '</g>';
 
       // Legend
       html += '<circle cx="' + (pad.left + 4) + '" cy="' + (h - 4) + '" r="4" fill="' + green + '" />';
@@ -1403,6 +1419,31 @@
       html += '<text x="' + (pad.left + 72) + '" y="' + (h - 1) + '" fill="rgba(255,255,255,0.4)" font-size="9">Calculated</text>';
 
       svg.innerHTML = html;
+
+      // Wire up tap/hover on data points
+      svg.querySelectorAll('.weight-tap').forEach(function(circle) {
+        function showTip() {
+          var tt = document.getElementById('weightTooltip');
+          var ttText = document.getElementById('ttText');
+          var ttBg = document.getElementById('ttBg');
+          var cx = parseFloat(circle.dataset.x);
+          var cy = parseFloat(circle.dataset.y);
+          ttText.textContent = circle.dataset.label;
+          ttText.setAttribute('x', cx);
+          ttText.setAttribute('y', cy - 14);
+          var bbox = ttText.getBBox();
+          ttBg.setAttribute('x', bbox.x - 6);
+          ttBg.setAttribute('y', bbox.y - 3);
+          ttBg.setAttribute('width', bbox.width + 12);
+          ttBg.setAttribute('height', bbox.height + 6);
+          tt.style.display = '';
+        }
+        circle.addEventListener('click', showTip);
+        circle.addEventListener('mouseenter', showTip);
+      });
+      svg.addEventListener('mouseleave', function() {
+        document.getElementById('weightTooltip').style.display = 'none';
+      });
     }
 
     function renderWeightLog() {

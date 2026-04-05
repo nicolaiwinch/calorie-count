@@ -523,6 +523,13 @@ select.user-picker-input {
   vertical-align: middle;
 }
 
+.log-health-dots-row {
+  display: inline-flex;
+  gap: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 /* Healthiness charts */
 #healthChartsContainer {
   display: flex;

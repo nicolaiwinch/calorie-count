@@ -310,6 +310,11 @@
     function apiDeleteEntry(userId, date, entryId) {
       return apiRequest('/api/entries/' + userId + '/' + date + '/' + entryId, { method: 'DELETE' });
     }
+    function apiUpdateEntry(userId, date, entryId, updates) {
+      return apiRequest('/api/entries/' + userId + '/' + date + '/' + entryId, {
+        method: 'PATCH', body: JSON.stringify(updates)
+      });
+    }
     function apiListDates(userId) { return apiRequest('/api/entries/' + userId + '/dates'); }
     function apiGetEntriesRange(userId, start, end) {
       return apiRequest('/api/entries/' + userId + '/range/' + start + '/' + end);
@@ -531,11 +536,23 @@
       }
     }
 
+    var HEALTH_COLORS = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#f1c40f', green: 'var(--color-green)' };
+
     function healthDotHtml(entry) {
-      if (!entry.healthiness) return '';
-      var colors = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#f1c40f', green: 'var(--color-green)' };
-      var c = colors[entry.healthiness] || '';
-      return '<span class="log-health-dot" style="background:' + c + '"></span>';
+      if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food') return '';
+      if (entry.healthiness) {
+        var c = HEALTH_COLORS[entry.healthiness] || '';
+        return '<span class="log-health-dot" style="background:' + c + '"></span>';
+      }
+      // Show 4 dimmed clickable dots for untagged food
+      var dots = '';
+      ['red', 'orange', 'yellow', 'green'].forEach(function(h) {
+        dots += '<span class="log-health-dot log-health-pick" data-entry-id="' + entry.id +
+          '" data-entry-day="' + entry.time.slice(0, 10) +
+          '" data-health="' + h + '" style="background:' + HEALTH_COLORS[h] +
+          ';opacity:0.3;cursor:pointer"></span>';
+      });
+      return '<span class="log-health-dots-row">' + dots + '</span>';
     }
 
     function updateHealthCharts(ents) {
@@ -545,12 +562,16 @@
         return;
       }
 
-      // Count calories per healthiness category (food entries only)
-      var cats = { green: 0, yellow: 0, orange: 0, red: 0 };
+      // Count ALL food calories, untagged goes to 'none'
+      var cats = { green: 0, yellow: 0, orange: 0, red: 0, none: 0 };
       var total = 0;
       ents.forEach(function(e) {
-        if (e.type === 'food' && e.healthiness && cats.hasOwnProperty(e.healthiness)) {
-          cats[e.healthiness] += e.cal;
+        if (e.type === 'food') {
+          if (e.healthiness && cats.hasOwnProperty(e.healthiness)) {
+            cats[e.healthiness] += e.cal;
+          } else {
+            cats.none += e.cal;
+          }
           total += e.cal;
         }
       });
@@ -566,10 +587,11 @@
         green: 'var(--color-green)',
         yellow: '#f1c40f',
         orange: 'var(--color-yellow)',
-        red: 'var(--color-red)'
+        red: 'var(--color-red)',
+        none: 'var(--border-subtle)'
       };
-      var labels = { green: 'Green', yellow: 'Yellow', orange: 'Orange', red: 'Red' };
-      var order = ['green', 'yellow', 'orange', 'red'];
+      var labels = { green: 'Green', yellow: 'Yellow', orange: 'Orange', red: 'Red', none: 'Unrated' };
+      var order = ['green', 'yellow', 'orange', 'red', 'none'];
 
       // Calculate percentages
       var pcts = {};
@@ -578,7 +600,8 @@
       // --- Donut chart (SVG stroke-dasharray) ---
       var circumference = 2 * Math.PI * 48; // r=48
       var offset = 0;
-      order.forEach(function(k) {
+      // Only 4 SVG segments exist; draw 'none' on the background
+      ['green', 'yellow', 'orange', 'red'].forEach(function(k) {
         var seg = document.getElementById('donut' + k.charAt(0).toUpperCase() + k.slice(1));
         var len = (pcts[k] / 100) * circumference;
         seg.setAttribute('stroke', colors[k]);
@@ -638,6 +661,21 @@
           await apiDeleteEntry(currentUser, entryDay, entryId);
           liveEntries = liveEntries.filter(function(e) { return e.id !== entryId; });
           entries = entries.filter(function(e) { return e.id !== entryId; });
+          refresh();
+        });
+      });
+      // Clickable health dots for untagged food entries
+      container.querySelectorAll('.log-health-pick').forEach(function(dot) {
+        dot.addEventListener('click', async function() {
+          var entryId = dot.dataset.entryId;
+          var entryDay = dot.dataset.entryDay;
+          var health = dot.dataset.health;
+          await apiUpdateEntry(currentUser, entryDay, entryId, { healthiness: health });
+          // Update local state
+          [liveEntries, entries].forEach(function(arr) {
+            var found = arr.find(function(e) { return e.id === entryId; });
+            if (found) found.healthiness = health;
+          });
           refresh();
         });
       });

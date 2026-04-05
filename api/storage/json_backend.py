@@ -144,3 +144,13 @@ class JsonStorage(StorageBackend):
             days.remove(day_str)
             self._write_json(path, days)
         return True
+
+    def update_entry(self, user_id: str, day: date, entry_id: str, updates: dict) -> dict | None:
+        file = self._day_file(user_id, day)
+        entries = self._read_json(file)
+        for entry in entries:
+            if entry.get("id") == entry_id:
+                entry.update(updates)
+                self._write_json(file, entries)
+                return entry
+        return None

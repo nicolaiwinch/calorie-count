@@ -55,3 +55,7 @@ class StorageBackend(ABC):
     @abstractmethod
     def unconfirm_day(self, user_id: str, day: date) -> bool:
         """Remove confirmed status from a day. Returns True."""
+
+    @abstractmethod
+    def update_entry(self, user_id: str, day: date, entry_id: str, updates: dict) -> dict | None:
+        """Partially update an entry. Returns updated entry or None if not found."""

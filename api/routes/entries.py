@@ -48,6 +48,14 @@ def add_entry(user_id: str, entry: EntryIn) -> EntryOut:
     return saved
 
 
+@router.patch("/{user_id}/{day}/{entry_id}")
+def update_entry(user_id: str, day: date, entry_id: str, updates: dict) -> dict:
+    updated = STORAGE.update_entry(user_id, day, entry_id, updates)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    return updated
+
+
 @router.delete("/{user_id}/{day}/{entry_id}")
 def delete_entry(user_id: str, day: date, entry_id: str) -> dict:
     deleted = STORAGE.delete_entry(user_id, day, entry_id)

@@ -1271,7 +1271,7 @@
 
     async function loadWeight() {
       weightEntries = await apiGetWeight(currentUser);
-      renderWeightChart();
+      await renderWeightChart();
       renderWeightLog();
     }
 
@@ -1284,7 +1284,7 @@
       await loadWeight();
     }
 
-    function renderWeightChart() {
+    async function renderWeightChart() {
       var svg = document.getElementById('weightChart');
       if (weightEntries.length < 2) {
         svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="14">Need at least 2 entries for chart</text>';
@@ -1297,16 +1297,51 @@
       var cw = w - pad.left - pad.right;
       var ch = h - pad.top - pad.bottom;
 
-      var kgs = weightEntries.map(function(e) { return e.kg; });
-      var minKg = Math.floor(Math.min.apply(null, kgs) - 0.5);
-      var maxKg = Math.ceil(Math.max.apply(null, kgs) + 0.5);
-      if (maxKg - minKg < 2) { minKg -= 1; maxKg += 1; }
-
-      var firstDate = new Date(weightEntries[0].date);
-      var lastDate = new Date(weightEntries[weightEntries.length - 1].date);
+      var firstDateStr = weightEntries[0].date;
+      var lastDateStr = weightEntries[weightEntries.length - 1].date;
+      var firstDate = new Date(firstDateStr);
+      var lastDate = new Date(lastDateStr);
       var dateRange = lastDate - firstDate || 1;
 
-      function x(d) { return pad.left + ((new Date(d) - firstDate) / dateRange) * cw; }
+      // Fetch calorie entries for the date range to calculate predicted weight
+      var calEntries = [];
+      try {
+        calEntries = await apiGetEntriesRange(currentUser, firstDateStr, lastDateStr);
+      } catch(e) {}
+
+      // Group calorie entries by day: net = eaten - exercise
+      var calByDay = {};
+      calEntries.forEach(function(e) {
+        var day = e.time.slice(0, 10);
+        if (!calByDay[day]) calByDay[day] = { eaten: 0, exercise: 0 };
+        if (e.type === 'food') calByDay[day].eaten += e.cal;
+        else calByDay[day].exercise += e.cal;
+      });
+
+      // Build predicted weight day by day from first weigh-in
+      var dailyBurn = getDailyBurn();
+      var predicted = [];
+      var calcWeight = weightEntries[0].kg;
+      var d = new Date(firstDate);
+      while (d <= lastDate) {
+        var dayStr = d.toISOString().slice(0, 10);
+        var dayData = calByDay[dayStr] || { eaten: 0, exercise: 0 };
+        if (dayStr !== firstDateStr) {
+          var netSurplus = dayData.eaten - dayData.exercise - dailyBurn;
+          calcWeight += netSurplus / 7000;
+        }
+        predicted.push({ date: dayStr, kg: calcWeight });
+        d.setDate(d.getDate() + 1);
+      }
+
+      // Determine Y range from both actual and predicted
+      var allKgs = weightEntries.map(function(e) { return e.kg; })
+        .concat(predicted.map(function(e) { return e.kg; }));
+      var minKg = Math.floor(Math.min.apply(null, allKgs) - 0.5);
+      var maxKg = Math.ceil(Math.max.apply(null, allKgs) + 0.5);
+      if (maxKg - minKg < 2) { minKg -= 1; maxKg += 1; }
+
+      function x(dt) { return pad.left + ((new Date(dt) - firstDate) / dateRange) * cw; }
       function y(kg) { return pad.top + ch - ((kg - minKg) / (maxKg - minKg)) * ch; }
 
       var html = '';
@@ -1324,38 +1359,58 @@
       var dateLabels = [weightEntries[0], weightEntries[weightEntries.length - 1]];
       if (weightEntries.length > 4) dateLabels.splice(1, 0, weightEntries[Math.floor(weightEntries.length / 2)]);
       dateLabels.forEach(function(e) {
-        var d = new Date(e.date);
-        var label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        var dl = new Date(e.date);
+        var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         html += '<text x="' + x(e.date) + '" y="' + (h - 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="11">' + label + '</text>';
       });
 
       var green = getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim();
+      var yellow = getComputedStyle(document.documentElement).getPropertyValue('--color-yellow').trim();
 
-      // Raw data line (faint)
-      var points = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      html += '<polyline points="' + points + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.25" />';
+      // --- Predicted weight (dotted, yellow/orange) ---
+      var predPoints = predicted.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
+      html += '<polyline points="' + predPoints + '" fill="none" stroke="' + yellow + '" stroke-width="1" stroke-dasharray="4,4" opacity="0.4" />';
 
-      // 7-day moving average line
-      var window = 7;
-      if (weightEntries.length >= window) {
+      // Predicted 7-day moving average
+      if (predicted.length >= 7) {
+        var predMa = [];
+        for (var m = 0; m < predicted.length; m++) {
+          var ms = Math.max(0, m - 6);
+          var msum = 0;
+          for (var n = ms; n <= m; n++) msum += predicted[n].kg;
+          predMa.push(x(predicted[m].date) + ',' + y(msum / (m - ms + 1)));
+        }
+        html += '<polyline points="' + predMa.join(' ') + '" fill="none" stroke="' + yellow + '" stroke-width="2" stroke-dasharray="6,4" stroke-linejoin="round" />';
+      }
+
+      // --- Actual weight (green) ---
+      var actPoints = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
+      html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.25" />';
+
+      // Actual 7-day moving average
+      if (weightEntries.length >= 7) {
         var maPoints = [];
         for (var j = 0; j < weightEntries.length; j++) {
-          var start = Math.max(0, j - window + 1);
+          var s = Math.max(0, j - 6);
           var sum = 0;
-          for (var k = start; k <= j; k++) sum += weightEntries[k].kg;
-          var avg = sum / (j - start + 1);
-          maPoints.push(x(weightEntries[j].date) + ',' + y(avg));
+          for (var k = s; k <= j; k++) sum += weightEntries[k].kg;
+          maPoints.push(x(weightEntries[j].date) + ',' + y(sum / (j - s + 1)));
         }
         html += '<polyline points="' + maPoints.join(' ') + '" fill="none" stroke="' + green + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />';
       } else {
-        // Not enough data for MA, show raw line solid
-        html += '<polyline points="' + points + '" fill="none" stroke="' + green + '" stroke-width="2" stroke-linejoin="round" />';
+        html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="2" stroke-linejoin="round" />';
       }
 
-      // Dots
+      // Actual dots
       weightEntries.forEach(function(e) {
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.4" />';
       });
+
+      // Legend
+      html += '<circle cx="' + (pad.left + 4) + '" cy="' + (h - 4) + '" r="4" fill="' + green + '" />';
+      html += '<text x="' + (pad.left + 12) + '" y="' + (h - 1) + '" fill="rgba(255,255,255,0.4)" font-size="9">Actual</text>';
+      html += '<line x1="' + (pad.left + 52) + '" y1="' + (h - 4) + '" x2="' + (pad.left + 68) + '" y2="' + (h - 4) + '" stroke="' + yellow + '" stroke-width="2" stroke-dasharray="4,3" />';
+      html += '<text x="' + (pad.left + 72) + '" y="' + (h - 1) + '" fill="rgba(255,255,255,0.4)" font-size="9">Calculated</text>';
 
       svg.innerHTML = html;
     }

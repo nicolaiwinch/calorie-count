@@ -502,7 +502,7 @@
       }
     }
 
-    var HEALTH_COLORS = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#d4c84e', green: 'var(--color-green)' };
+    var HEALTH_COLORS = { red: 'var(--color-red)', orange: '#f1c40f', yellow: '#5bc0de', green: 'var(--color-green)' };
 
     function healthDotHtml(entry) {
       if (!userProfile || !userProfile.track_healthiness || entry.type !== 'food') return '';
@@ -554,8 +554,8 @@
 
       var colors = {
         green: 'var(--color-green)',
-        yellow: '#d4c84e',
-        orange: 'var(--color-yellow)',
+        yellow: '#5bc0de',
+        orange: '#f1c40f',
         red: 'var(--color-red)',
         none: 'var(--border-subtle)'
       };

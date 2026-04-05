@@ -509,8 +509,8 @@ select.user-picker-input {
 }
 
 .health-dot-red { background: var(--color-red); }
-.health-dot-orange { background: var(--color-yellow); }
-.health-dot-yellow { background: #d4c84e; }
+.health-dot-orange { background: #f1c40f; }
+.health-dot-yellow { background: #5bc0de; }
 .health-dot-green { background: var(--color-green); }
 
 /* Healthiness dot in log entries */
@@ -555,8 +555,8 @@ select.user-picker-input {
 /* Stacked bar */
 .health-bar {
   display: flex;
-  height: 24px;
-  border-radius: 12px;
+  height: 14px;
+  border-radius: 7px;
   overflow: hidden;
   background: var(--border-subtle);
   margin-bottom: 8px;

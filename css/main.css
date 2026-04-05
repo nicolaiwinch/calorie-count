@@ -8,6 +8,7 @@ body {
   padding: 0 0 100px 0;
   -webkit-user-select: none;
   user-select: none;
+  overflow-x: hidden;
 }
 
 #appMain {

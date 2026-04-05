@@ -500,23 +500,19 @@
       // Calculate green threshold based on weekly goal
       var weeklyGoal = (userProfile && userProfile.weekly_kg_goal) || 0;
       var greenThreshold;
-      var goalCalories;
       if (weeklyGoal > 0) {
         var dailyDeficit = weeklyGoal * 1000; // kcal deficit per day
         if (livePeriod === 'day') {
           greenThreshold = dailyDeficit;
-          goalCalories = getDailyBurn() - dailyDeficit;
         } else {
           var range2 = getPeriodRange(getDayKey(), livePeriod);
           var rs = new Date(range2.start + 'T12:00:00');
           var re = new Date(range2.end + 'T12:00:00');
           var periodDays = Math.round((re - rs) / 86400000) + 1;
           greenThreshold = dailyDeficit * periodDays;
-          goalCalories = Math.round((getDailyBurn() - dailyDeficit) * periodDays);
         }
       } else {
         greenThreshold = GREEN_THRESHOLD;
-        goalCalories = null;
       }
 
       var el = document.getElementById('availableCalories');
@@ -546,7 +542,7 @@
           var endDate = new Date(range.end + 'T12:00:00');
           forecastText = forecast + ' by ' + endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         }
-        if (goalCalories) forecastText += '  ·  goal ' + goalCalories + ' kcal';
+        if (weeklyGoal > 0) forecastText += '  ·  green over ' + Math.round(greenThreshold);
         forecastEl.textContent = forecastText;
       }
 

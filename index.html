@@ -195,6 +195,14 @@
         <input type="date" id="weightDate" class="weight-input" style="width:100%">
       </div>
 
+      <div style="display:flex;justify-content:center;padding:8px 16px 0">
+        <div class="history-period-tabs" id="weightPeriodTabs">
+          <button class="period-tab active" data-period="30d">30 days</button>
+          <button class="period-tab" data-period="90d">90 days</button>
+          <button class="period-tab" data-period="month">Month</button>
+          <button class="period-tab" data-period="all">All</button>
+        </div>
+      </div>
       <div class="weight-chart-container">
         <svg id="weightChart" width="100%" height="200" preserveAspectRatio="none"></svg>
       </div>
@@ -1352,6 +1360,7 @@
 
     // ===== weight view =====
     var weightEntries = [];
+    var weightChartPeriod = '30d';
 
     function showWeight() {
       getTodaySections().forEach(function(el) { el.style.display = 'none'; });
@@ -1384,7 +1393,26 @@
 
     async function renderWeightChart() {
       var svg = document.getElementById('weightChart');
-      if (weightEntries.length < 2) {
+      function parseLocalDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); }
+
+      // Filter entries by selected period
+      var filtered = weightEntries;
+      if (weightChartPeriod !== 'all' && weightEntries.length > 0) {
+        var today = new Date(); today.setHours(0,0,0,0);
+        var cutoff;
+        if (weightChartPeriod === '30d') {
+          cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 30);
+        } else if (weightChartPeriod === '90d') {
+          cutoff = new Date(today); cutoff.setDate(cutoff.getDate() - 90);
+        } else if (weightChartPeriod === 'month') {
+          cutoff = new Date(today.getFullYear(), today.getMonth(), 1);
+        }
+        filtered = weightEntries.filter(function(e) {
+          return parseLocalDate(e.date) >= cutoff;
+        });
+      }
+
+      if (filtered.length < 2) {
         svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="14">Need at least 2 entries for chart</text>';
         return;
       }
@@ -1395,9 +1423,8 @@
       var cw = w - pad.left - pad.right;
       var ch = h - pad.top - pad.bottom;
 
-      var firstDateStr = weightEntries[0].date;
-      var lastDateStr = weightEntries[weightEntries.length - 1].date;
-      function parseLocalDate(s) { var p = s.split('-'); return new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2])); }
+      var firstDateStr = filtered[0].date;
+      var lastDateStr = filtered[filtered.length - 1].date;
       var firstDate = parseLocalDate(firstDateStr);
       var lastDate = parseLocalDate(lastDateStr);
       var dateRange = lastDate - firstDate || 1;
@@ -1420,7 +1447,7 @@
       // Build predicted weight day by day from first weigh-in (up to today)
       var dailyBurn = getDailyBurn();
       var predicted = [];
-      var calcWeight = weightEntries[0].kg;
+      var calcWeight = filtered[0].kg;
       var ydKey = getDayKey();
       var ydParts = ydKey.split('-');
       var yesterday = new Date(parseInt(ydParts[0]), parseInt(ydParts[1]) - 1, parseInt(ydParts[2]) - 1);
@@ -1438,7 +1465,7 @@
       }
 
       // Determine Y range from both actual and predicted
-      var allKgs = weightEntries.map(function(e) { return e.kg; })
+      var allKgs = filtered.map(function(e) { return e.kg; })
         .concat(predicted.map(function(e) { return e.kg; }));
       var minKg = Math.floor(Math.min.apply(null, allKgs) - 0.5);
       var maxKg = Math.ceil(Math.max.apply(null, allKgs) + 0.5);
@@ -1457,8 +1484,8 @@
       }
 
       // Date labels
-      var dateLabels = [weightEntries[0], weightEntries[weightEntries.length - 1]];
-      if (weightEntries.length > 4) dateLabels.splice(1, 0, weightEntries[Math.floor(weightEntries.length / 2)]);
+      var dateLabels = [filtered[0], filtered[filtered.length - 1]];
+      if (filtered.length > 4) dateLabels.splice(1, 0, filtered[Math.floor(filtered.length / 2)]);
       dateLabels.forEach(function(e) {
         var dl = new Date(e.date);
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -1470,14 +1497,14 @@
 
       // --- Layer 1: 7-day moving averages (behind everything) ---
       // Actual MA
-      var actPoints = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      if (weightEntries.length >= 7) {
+      var actPoints = filtered.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
+      if (filtered.length >= 7) {
         var maPoints = [];
-        for (var j = 0; j < weightEntries.length; j++) {
+        for (var j = 0; j < filtered.length; j++) {
           var s = Math.max(0, j - 6);
           var sum = 0;
-          for (var k = s; k <= j; k++) sum += weightEntries[k].kg;
-          maPoints.push(x(weightEntries[j].date) + ',' + y(sum / (j - s + 1)));
+          for (var k = s; k <= j; k++) sum += filtered[k].kg;
+          maPoints.push(x(filtered[j].date) + ',' + y(sum / (j - s + 1)));
         }
         html += '<polyline points="' + maPoints.join(' ') + '" fill="none" stroke="' + green + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.5" />';
       }
@@ -1489,7 +1516,7 @@
 
       // Build lookup of actual weights by date for overlap detection
       var actualByDate = {};
-      weightEntries.forEach(function(e) { actualByDate[e.date] = e.kg; });
+      filtered.forEach(function(e) { actualByDate[e.date] = e.kg; });
 
       // Predicted dots + tap targets
       predicted.forEach(function(e) {
@@ -1509,7 +1536,7 @@
       html += '<polyline points="' + actPoints + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.3" />';
 
       // Actual dots + tap targets
-      weightEntries.forEach(function(e) {
+      filtered.forEach(function(e) {
         html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.5" />';
         var dl = new Date(e.date + 'T00:00:00');
         var label = dl.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ': ' + e.kg.toFixed(1) + ' kg';
@@ -1619,6 +1646,14 @@
         document.getElementById('btnWeight').addEventListener('click', showWeight);
         document.getElementById('btnWeightBack').addEventListener('click', hideWeight);
         document.getElementById('btnAddWeight').addEventListener('click', handleAddWeight);
+        document.getElementById('weightPeriodTabs').querySelectorAll('.period-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            document.getElementById('weightPeriodTabs').querySelectorAll('.period-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            weightChartPeriod = tab.dataset.period;
+            renderWeightChart();
+          });
+        });
 
         ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(function(id) {
           document.getElementById(id).addEventListener('input', updateBurnDisplay);

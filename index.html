@@ -106,6 +106,7 @@
 
     <div class="history-link-container">
       <button class="history-link-btn" id="btnHistory">History</button>
+      <button class="history-link-btn" id="btnWeight">Weight</button>
     </div>
 
     <!-- History View -->
@@ -156,6 +157,30 @@
       <div class="log-section">
         <div class="log-title" id="historyLogTitle">Entries</div>
         <div id="historyLogEntries"></div>
+      </div>
+    </div>
+
+    <!-- Weight View -->
+    <div id="weightView" style="display:none">
+      <div class="history-header">
+        <button class="history-back-btn" id="btnWeightBack">Today</button>
+        <div style="font-size:16px;font-weight:600">Weight</div>
+        <div style="width:50px"></div>
+      </div>
+
+      <div class="weight-input-row">
+        <input type="number" step="0.1" id="weightInput" placeholder="kg" class="weight-input" autocomplete="off">
+        <input type="date" id="weightDate" class="weight-input weight-date-input">
+        <button class="weight-add-btn" id="btnAddWeight">+</button>
+      </div>
+
+      <div class="weight-chart-container">
+        <svg id="weightChart" width="100%" height="200" preserveAspectRatio="none"></svg>
+      </div>
+
+      <div class="log-section">
+        <div class="log-title">Weight Log</div>
+        <div id="weightLogEntries"></div>
       </div>
     </div>
 
@@ -299,6 +324,15 @@
     }
     function apiUnconfirmDay(userId, day) {
       return apiRequest('/api/entries/' + userId + '/confirm/' + day, { method: 'DELETE' });
+    }
+    function apiGetWeight(userId) { return apiRequest('/api/weight/' + userId); }
+    function apiAddWeight(userId, date, kg) {
+      return apiRequest('/api/weight/' + userId, {
+        method: 'POST', body: JSON.stringify({ date: date, kg: kg })
+      });
+    }
+    function apiDeleteWeight(userId, day) {
+      return apiRequest('/api/weight/' + userId + '/' + day, { method: 'DELETE' });
     }
 
     // ===== state =====
@@ -1195,6 +1229,7 @@
     function showHistory() {
       viewingDate = dateAdd(getDayKey(), -1);
       getTodaySections().forEach(function(el) { el.style.display = 'none'; });
+      document.getElementById('weightView').style.display = 'none';
       document.getElementById('historyView').style.display = 'block';
       loadHistoryView();
     }
@@ -1202,6 +1237,7 @@
     function showToday() {
       viewingDate = null;
       document.getElementById('historyView').style.display = 'none';
+      document.getElementById('weightView').style.display = 'none';
       getTodaySections().forEach(function(el) { el.style.display = ''; });
       loadLiveEntries().then(refresh);
     }
@@ -1212,6 +1248,117 @@
         t.classList.toggle('active', t.dataset.period === period);
       });
       loadHistoryView();
+    }
+
+    // ===== weight view =====
+    var weightEntries = [];
+
+    function showWeight() {
+      getTodaySections().forEach(function(el) { el.style.display = 'none'; });
+      document.getElementById('historyView').style.display = 'none';
+      document.getElementById('weightView').style.display = 'block';
+      document.getElementById('weightDate').value = getDayKey();
+      loadWeight();
+    }
+
+    function hideWeight() {
+      document.getElementById('weightView').style.display = 'none';
+      getTodaySections().forEach(function(el) { el.style.display = ''; });
+      loadLiveEntries().then(refresh);
+    }
+
+    async function loadWeight() {
+      weightEntries = await apiGetWeight(currentUser);
+      renderWeightChart();
+      renderWeightLog();
+    }
+
+    async function handleAddWeight() {
+      var kg = parseFloat(document.getElementById('weightInput').value);
+      var date = document.getElementById('weightDate').value;
+      if (!kg || !date) return;
+      await apiAddWeight(currentUser, date, kg);
+      document.getElementById('weightInput').value = '';
+      await loadWeight();
+    }
+
+    function renderWeightChart() {
+      var svg = document.getElementById('weightChart');
+      if (weightEntries.length < 2) {
+        svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="14">Need at least 2 entries for chart</text>';
+        return;
+      }
+
+      var w = svg.clientWidth || 300;
+      var h = 200;
+      var pad = { top: 20, right: 16, bottom: 30, left: 40 };
+      var cw = w - pad.left - pad.right;
+      var ch = h - pad.top - pad.bottom;
+
+      var kgs = weightEntries.map(function(e) { return e.kg; });
+      var minKg = Math.floor(Math.min.apply(null, kgs) - 0.5);
+      var maxKg = Math.ceil(Math.max.apply(null, kgs) + 0.5);
+      if (maxKg - minKg < 2) { minKg -= 1; maxKg += 1; }
+
+      var firstDate = new Date(weightEntries[0].date);
+      var lastDate = new Date(weightEntries[weightEntries.length - 1].date);
+      var dateRange = lastDate - firstDate || 1;
+
+      function x(d) { return pad.left + ((new Date(d) - firstDate) / dateRange) * cw; }
+      function y(kg) { return pad.top + ch - ((kg - minKg) / (maxKg - minKg)) * ch; }
+
+      var html = '';
+
+      // Grid lines
+      var steps = 4;
+      for (var i = 0; i <= steps; i++) {
+        var val = minKg + (maxKg - minKg) * (i / steps);
+        var yy = y(val);
+        html += '<line x1="' + pad.left + '" y1="' + yy + '" x2="' + (w - pad.right) + '" y2="' + yy + '" stroke="rgba(255,255,255,0.06)" />';
+        html += '<text x="' + (pad.left - 6) + '" y="' + (yy + 4) + '" text-anchor="end" fill="rgba(255,255,255,0.3)" font-size="11">' + val.toFixed(1) + '</text>';
+      }
+
+      // Date labels
+      var dateLabels = [weightEntries[0], weightEntries[weightEntries.length - 1]];
+      if (weightEntries.length > 4) dateLabels.splice(1, 0, weightEntries[Math.floor(weightEntries.length / 2)]);
+      dateLabels.forEach(function(e) {
+        var d = new Date(e.date);
+        var label = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+        html += '<text x="' + x(e.date) + '" y="' + (h - 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="11">' + label + '</text>';
+      });
+
+      // Line
+      var points = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
+      html += '<polyline points="' + points + '" fill="none" stroke="' + getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim() + '" stroke-width="2" stroke-linejoin="round" />';
+
+      // Dots
+      weightEntries.forEach(function(e) {
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="4" fill="' + getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim() + '" />';
+      });
+
+      svg.innerHTML = html;
+    }
+
+    function renderWeightLog() {
+      var container = document.getElementById('weightLogEntries');
+      if (weightEntries.length === 0) {
+        container.innerHTML = '<div class="empty-log">No weight entries yet</div>';
+        return;
+      }
+      var sorted = weightEntries.slice().reverse();
+      container.innerHTML = sorted.map(function(e) {
+        var d = new Date(e.date + 'T00:00:00');
+        var dateStr = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+        return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
+          e.kg.toFixed(1) + ' kg</div><div class="log-entry-time">' + dateStr +
+          '</div></div><button class="log-entry-delete" data-day="' + e.date + '">\u00d7</button></div>';
+      }).join('');
+      container.querySelectorAll('.log-entry-delete').forEach(function(btn) {
+        btn.addEventListener('click', async function() {
+          await apiDeleteWeight(currentUser, btn.dataset.day);
+          await loadWeight();
+        });
+      });
     }
 
     // --- Init ---
@@ -1247,6 +1394,11 @@
         });
         document.getElementById('btnHistoryFood').addEventListener('click', function() { openModal('food'); });
         document.getElementById('btnHistoryExercise').addEventListener('click', function() { openModal('exercise'); });
+
+        // Weight
+        document.getElementById('btnWeight').addEventListener('click', showWeight);
+        document.getElementById('btnWeightBack').addEventListener('click', hideWeight);
+        document.getElementById('btnAddWeight').addEventListener('click', handleAddWeight);
 
         ['profileGender', 'profileAge', 'profileWeight', 'profileHeight', 'profileActivity'].forEach(function(id) {
           document.getElementById(id).addEventListener('input', updateBurnDisplay);

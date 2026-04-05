@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.entries import router as entries_router
 from routes.users import router as users_router
+from routes.weight import router as weight_router
 
 app = FastAPI(title="Calorie Counter API", version="0.1.0")
 
@@ -23,6 +24,7 @@ app.add_middleware(
 
 app.include_router(entries_router)
 app.include_router(users_router)
+app.include_router(weight_router)
 
 
 @app.get("/")

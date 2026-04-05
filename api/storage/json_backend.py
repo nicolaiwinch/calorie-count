@@ -94,7 +94,7 @@ class JsonStorage(StorageBackend):
             return []
         dates = []
         for f in user_dir.glob("*.json"):
-            if f.stem == "confirmed":
+            if f.stem in ("confirmed", "weight"):
                 continue
             entries = self._read_json(f)
             if entries:
@@ -108,7 +108,7 @@ class JsonStorage(StorageBackend):
             return []
         all_entries = []
         for f in user_dir.glob("*.json"):
-            if f.stem == "confirmed":
+            if f.stem in ("confirmed", "weight"):
                 continue
             try:
                 file_date = date.fromisoformat(f.stem)
@@ -154,3 +154,34 @@ class JsonStorage(StorageBackend):
                 self._write_json(file, entries)
                 return entry
         return None
+
+    # --- Weight ---
+
+    def _weight_file(self, user_id: str) -> Path:
+        return self._user_dir(user_id) / "weight.json"
+
+    def get_weight_entries(self, user_id: str) -> list[dict]:
+        data = self._read_json(self._weight_file(user_id))
+        if not isinstance(data, list):
+            return []
+        data.sort(key=lambda e: e.get("date", ""))
+        return data
+
+    def save_weight_entry(self, user_id: str, entry: dict) -> dict:
+        path = self._weight_file(user_id)
+        entries = self.get_weight_entries(user_id)
+        # Overwrite if same date exists
+        entries = [e for e in entries if e.get("date") != entry["date"]]
+        entries.append(entry)
+        entries.sort(key=lambda e: e.get("date", ""))
+        self._write_json(path, entries)
+        return entry
+
+    def delete_weight_entry(self, user_id: str, day: str) -> bool:
+        path = self._weight_file(user_id)
+        entries = self.get_weight_entries(user_id)
+        filtered = [e for e in entries if e.get("date") != day]
+        if len(filtered) == len(entries):
+            return False
+        self._write_json(path, filtered)
+        return True

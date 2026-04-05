@@ -612,3 +612,58 @@ select.user-picker-input {
   padding: 8px;
   z-index: 10;
 }
+
+/* Weight view */
+.weight-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  align-items: center;
+}
+
+.weight-input {
+  flex: 1;
+  padding: 14px 16px;
+  border: 2px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 16px;
+  outline: none;
+}
+
+.weight-date-input {
+  max-width: 140px;
+}
+
+.weight-input:focus { border-color: var(--border-focus); }
+
+.weight-add-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  background: var(--color-green);
+  color: var(--bg-primary);
+  font-size: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.weight-chart-container {
+  margin: 0 16px 16px;
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px 16px 12px;
+}
+
+.weight-chart-container svg {
+  overflow: visible;
+}
+
+.history-link-container {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}

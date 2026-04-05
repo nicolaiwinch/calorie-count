@@ -59,3 +59,15 @@ class StorageBackend(ABC):
     @abstractmethod
     def update_entry(self, user_id: str, day: date, entry_id: str, updates: dict) -> dict | None:
         """Partially update an entry. Returns updated entry or None if not found."""
+
+    @abstractmethod
+    def get_weight_entries(self, user_id: str) -> list[dict]:
+        """Get all weight entries for a user, sorted by date."""
+
+    @abstractmethod
+    def save_weight_entry(self, user_id: str, entry: dict) -> dict:
+        """Save a weight entry (date + kg). Overwrites if same date exists."""
+
+    @abstractmethod
+    def delete_weight_entry(self, user_id: str, day: str) -> bool:
+        """Delete a weight entry by date. Returns True if found and deleted."""

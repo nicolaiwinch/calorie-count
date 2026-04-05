@@ -184,6 +184,10 @@
           <option value="very_active">Very active — avg 15k+ steps/day</option>
         </select>
         <div class="profile-burn-display" id="profileBurnDisplay"></div>
+        <label class="profile-toggle">
+          <input type="checkbox" id="profileHealthiness">
+          <span>Track food healthiness</span>
+        </label>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
           <button class="modal-btn modal-btn-add" id="profileSave">Save</button>
@@ -197,6 +201,15 @@
         <div class="modal-title" id="modalTitle">Add Food</div>
         <input type="text" id="entryName" placeholder="What did you eat?" autocomplete="off">
         <input type="number" id="entryCal" placeholder="Calories" inputmode="numeric">
+        <div class="healthiness-picker" id="healthinessPicker" style="display:none">
+          <span class="healthiness-label">Healthiness</span>
+          <div class="healthiness-dots">
+            <button class="health-dot health-dot-red" data-health="red"></button>
+            <button class="health-dot health-dot-orange" data-health="orange"></button>
+            <button class="health-dot health-dot-yellow" data-health="yellow"></button>
+            <button class="health-dot health-dot-green" data-health="green"></button>
+          </div>
+        </div>
         <div class="quick-picks" id="quickPicks"></div>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
@@ -327,10 +340,11 @@
       if (livePeriod === 'day') liveEntries = entries;
     }
 
-    async function addEntryToState(type, name, cal) {
+    async function addEntryToState(type, name, cal, healthiness) {
       var date = getActiveDate();
       var time = isViewingToday() ? new Date().toISOString() : date + 'T12:00:00';
       var entry = { type: type, name: name, cal: cal, time: time };
+      if (healthiness) entry.healthiness = healthiness;
       var saved = await apiAddEntry(currentUser, entry);
       entries.push(saved);
     }
@@ -488,6 +502,13 @@
       }
     }
 
+    function healthDotHtml(entry) {
+      if (!entry.healthiness) return '';
+      var colors = { red: 'var(--color-red)', orange: 'var(--color-yellow)', yellow: '#f1c40f', green: 'var(--color-green)' };
+      var c = colors[entry.healthiness] || '';
+      return '<span class="log-health-dot" style="background:' + c + '"></span>';
+    }
+
     function renderLog(onDelete) {
       var container = document.getElementById('logEntries');
       var ents = liveEntries;
@@ -505,7 +526,7 @@
           ? d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' '
           : '';
         return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
-          escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
+          healthDotHtml(e) + escapeHtml(e.name) + '</div><div class="log-entry-time">' + dateStr + timeStr +
           '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
           cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
           e.id + '" data-day="' + e.time.slice(0, 10) + '">\u00d7</button></div></div>';
@@ -524,6 +545,7 @@
 
     // ===== modal =====
     var currentMode = 'food';
+    var selectedHealthiness = null;
     var onAddCallback = null;
 
     function modalOverlay() { return document.getElementById('modalOverlay'); }
@@ -537,10 +559,26 @@
       });
       document.getElementById('modalCancel').addEventListener('click', closeModal);
       document.getElementById('modalAddBtn').addEventListener('click', submitModal);
+
+      // Healthiness dots
+      document.querySelectorAll('.health-dot').forEach(function(dot) {
+        dot.addEventListener('click', function() {
+          var val = dot.dataset.health;
+          if (selectedHealthiness === val) {
+            selectedHealthiness = null;
+            dot.classList.remove('selected');
+          } else {
+            selectedHealthiness = val;
+            document.querySelectorAll('.health-dot').forEach(function(d) { d.classList.remove('selected'); });
+            dot.classList.add('selected');
+          }
+        });
+      });
     }
 
     function openModal(mode) {
       currentMode = mode;
+      selectedHealthiness = null;
       modalOverlay().classList.add('active');
       document.getElementById('modalTitle').textContent = mode === 'food' ? 'Add Food' : 'Add Exercise';
       modalNameInput().placeholder = mode === 'food' ? 'What did you eat?' : 'What exercise?';
@@ -558,6 +596,12 @@
       });
       modalNameInput().value = '';
       modalCalInput().value = '';
+      document.querySelectorAll('.health-dot').forEach(function(d) { d.classList.remove('selected'); });
+
+      // Show healthiness picker only for food and if user has it enabled
+      var showHealth = mode === 'food' && userProfile && userProfile.track_healthiness;
+      document.getElementById('healthinessPicker').style.display = showHealth ? 'flex' : 'none';
+
       setTimeout(function() { modalNameInput().focus(); }, 100);
     }
 
@@ -567,7 +611,7 @@
       var name = modalNameInput().value.trim() || (currentMode === 'food' ? 'Food' : 'Exercise');
       var cal = parseInt(modalCalInput().value);
       if (!cal || cal <= 0) return;
-      if (onAddCallback) onAddCallback(currentMode, name, cal);
+      if (onAddCallback) onAddCallback(currentMode, name, cal, selectedHealthiness);
       closeModal();
     }
 
@@ -582,8 +626,8 @@
       refresh();
     }
 
-    async function handleAdd(type, name, cal) {
-      await addEntryToState(type, name, cal);
+    async function handleAdd(type, name, cal, healthiness) {
+      await addEntryToState(type, name, cal, healthiness);
       if (document.getElementById('historyView').style.display !== 'none') {
         historyEntries = entries;
         updateHistoryDisplay();
@@ -673,6 +717,7 @@
       for (var i = 0; i < genderSelect.options.length; i++) {
         if (genderSelect.options[i].value === genderValue) { genderSelect.selectedIndex = i; break; }
       }
+      document.getElementById('profileHealthiness').checked = !!profile.track_healthiness;
       updateBurnDisplay();
       document.getElementById('profileOverlay').classList.add('active');
     }
@@ -711,6 +756,7 @@
         height_cm: parseFloat(document.getElementById('profileHeight').value) || 0,
         activity: document.getElementById('profileActivity').value,
         pin: getUserProfile() ? (getUserProfile().pin || '') : '',
+        track_healthiness: document.getElementById('profileHealthiness').checked,
       };
       userProfile = await apiSaveUser(userId, profile);
       document.getElementById('profileOverlay').classList.remove('active');
@@ -935,7 +981,7 @@
           var d = new Date(e.time);
           var timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           return '<div class="log-entry"><div class="log-entry-info"><div class="log-entry-name">' +
-            escapeHtml(e.name) + '</div><div class="log-entry-time">' + timeStr +
+            healthDotHtml(e) + escapeHtml(e.name) + '</div><div class="log-entry-time">' + timeStr +
             '</div></div><div style="display:flex;align-items:center"><div class="log-entry-cal ' +
             cls + '">' + sign + e.cal + '</div><button class="log-entry-delete" data-id="' +
             e.id + '">\u00d7</button></div></div>';

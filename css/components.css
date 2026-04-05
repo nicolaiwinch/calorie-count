@@ -458,6 +458,71 @@ select.user-picker-input {
   font-size: 20px;
 }
 
+/* Profile toggle */
+.profile-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.profile-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-green);
+}
+
+/* Healthiness picker */
+.healthiness-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 0 12px;
+}
+
+.healthiness-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.healthiness-dots {
+  display: flex;
+  gap: 10px;
+}
+
+.health-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.15s, border-color 0.15s;
+}
+
+.health-dot.selected {
+  opacity: 1;
+  border-color: white;
+}
+
+.health-dot-red { background: var(--color-red); }
+.health-dot-orange { background: var(--color-yellow); }
+.health-dot-yellow { background: #f1c40f; }
+.health-dot-green { background: var(--color-green); }
+
+/* Healthiness dot in log entries */
+.log-health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 /* Live period tabs */
 .live-period-tabs-container {
   display: flex;

@@ -10,6 +10,7 @@ class EntryIn(BaseModel):
     name: str
     cal: int
     time: str          # ISO timestamp, e.g. "2026-03-29T14:30:00"
+    healthiness: str | None = None  # "red", "orange", "yellow", "green" or null
 
 
 class EntryOut(EntryIn):
@@ -34,6 +35,7 @@ class UserProfile(BaseModel):
     activity: str = "light"       # sedentary, light, moderate, active, very_active
     daily_burn: int = 2200        # auto-calculated if profile is complete
     pin: str = ""
+    track_healthiness: bool = False
 
 
 def calculate_daily_burn(profile: dict) -> int:

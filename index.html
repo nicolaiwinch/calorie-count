@@ -1329,13 +1329,32 @@
         html += '<text x="' + x(e.date) + '" y="' + (h - 4) + '" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-size="11">' + label + '</text>';
       });
 
-      // Line
+      var green = getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim();
+
+      // Raw data line (faint)
       var points = weightEntries.map(function(e) { return x(e.date) + ',' + y(e.kg); }).join(' ');
-      html += '<polyline points="' + points + '" fill="none" stroke="' + getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim() + '" stroke-width="2" stroke-linejoin="round" />';
+      html += '<polyline points="' + points + '" fill="none" stroke="' + green + '" stroke-width="1" stroke-linejoin="round" opacity="0.25" />';
+
+      // 7-day moving average line
+      var window = 7;
+      if (weightEntries.length >= window) {
+        var maPoints = [];
+        for (var j = 0; j < weightEntries.length; j++) {
+          var start = Math.max(0, j - window + 1);
+          var sum = 0;
+          for (var k = start; k <= j; k++) sum += weightEntries[k].kg;
+          var avg = sum / (j - start + 1);
+          maPoints.push(x(weightEntries[j].date) + ',' + y(avg));
+        }
+        html += '<polyline points="' + maPoints.join(' ') + '" fill="none" stroke="' + green + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />';
+      } else {
+        // Not enough data for MA, show raw line solid
+        html += '<polyline points="' + points + '" fill="none" stroke="' + green + '" stroke-width="2" stroke-linejoin="round" />';
+      }
 
       // Dots
       weightEntries.forEach(function(e) {
-        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="4" fill="' + getComputedStyle(document.documentElement).getPropertyValue('--color-green').trim() + '" />';
+        html += '<circle cx="' + x(e.date) + '" cy="' + y(e.kg) + '" r="3" fill="' + green + '" opacity="0.4" />';
       });
 
       svg.innerHTML = html;

@@ -536,14 +536,14 @@ select.user-picker-input {
 #hist_healthChartsContainer {
   display: flex;
   gap: 16px;
-  padding: 0 16px;
+  padding: 0 8px;
 }
 
 .health-bar-container {
   flex: 1;
   background: var(--bg-card);
   border-radius: 16px;
-  padding: 16px;
+  padding: 12px 10px;
 }
 
 .health-chart-label {

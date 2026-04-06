@@ -652,8 +652,8 @@
       updateHealthCharts(liveEntries);
 
       // Training tracker
-      var todayKey = getDayKey();
-      updateTraining(liveEntries, 'day', todayKey, todayKey);
+      var liveRange = getPeriodRange(getDayKey(), livePeriod);
+      updateTraining(liveEntries, livePeriod, liveRange.start, liveRange.end);
 
       // Update log title
       var logTitle = document.querySelector('#appMain > .log-section > .log-title');

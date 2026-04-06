@@ -823,6 +823,12 @@
       if (period === 'month') {
         var monthDate = new Date(rangeStart + 'T12:00:00');
         label.textContent = 'Training ' + monthDate.toLocaleString(undefined, { month: 'long' });
+      } else if (period === 'week') {
+        // ISO week number from the Monday of the week
+        var wkDate = new Date(rangeStart + 'T12:00:00');
+        var jan1 = new Date(wkDate.getFullYear(), 0, 1);
+        var weekNum = Math.ceil(((wkDate - jan1) / 86400000 + jan1.getDay() + 6) / 7);
+        label.textContent = 'Training Week ' + weekNum;
       } else {
         label.textContent = 'Training';
       }

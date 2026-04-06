@@ -244,19 +244,39 @@
     <div class="modal-overlay" id="profileOverlay">
       <div class="modal">
         <div class="modal-title">Profile</div>
-        <input type="text" id="profileName" placeholder="Name" autocomplete="off">
+
+        <div class="profile-field">
+          <label class="profile-label">Name</label>
+          <input type="text" id="profileName" autocomplete="off">
+        </div>
+
+        <div class="profile-section-label">Body</div>
         <div class="picker-row">
-          <select id="profileGender" class="modal-select">
-            <option value="" disabled>Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          <input type="number" id="profileAge" placeholder="Age" inputmode="numeric">
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Gender</label>
+            <select id="profileGender" class="modal-select">
+              <option value="" disabled>—</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          </div>
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Age</label>
+            <input type="number" id="profileAge" inputmode="numeric">
+          </div>
         </div>
         <div class="picker-row">
-          <input type="number" id="profileWeight" placeholder="Weight (kg)" inputmode="decimal">
-          <input type="number" id="profileHeight" placeholder="Height (cm)" inputmode="numeric">
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Weight (kg)</label>
+            <input type="number" id="profileWeight" inputmode="decimal">
+          </div>
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Height (cm)</label>
+            <input type="number" id="profileHeight" inputmode="numeric">
+          </div>
         </div>
+
+        <div class="profile-section-label">Activity Level</div>
         <select id="profileActivity" class="modal-select" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
           <option value="sedentary">Sedentary — avg &lt; 4k steps/day</option>
           <option value="light">Lightly active — avg 4-7k steps/day</option>
@@ -265,6 +285,24 @@
           <option value="very_active">Very active — avg 15k+ steps/day</option>
         </select>
         <div class="profile-burn-display" id="profileBurnDisplay"></div>
+
+        <div class="profile-section-label">Goals</div>
+        <div class="profile-field">
+          <label class="profile-label">Weekly weight loss (kg)</label>
+          <input type="number" id="profileWeeklyGoal" inputmode="decimal" step="0.1">
+        </div>
+        <div class="picker-row" id="healthGoalsRow" style="display:none">
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Healthy+Good % goal</label>
+            <input type="number" id="profileHealthyGoal" inputmode="numeric" min="0" max="100">
+          </div>
+          <div class="profile-field" style="flex:1">
+            <label class="profile-label">Junk % max</label>
+            <input type="number" id="profileJunkLimit" inputmode="numeric" min="0" max="100">
+          </div>
+        </div>
+
+        <div class="profile-section-label">Tracking</div>
         <label class="profile-toggle">
           <input type="checkbox" id="profileHealthiness">
           <span>Track food healthiness</span>
@@ -273,11 +311,6 @@
           <input type="checkbox" id="profileTraining">
           <span>Count training days</span>
         </label>
-        <input type="number" id="profileWeeklyGoal" placeholder="Weekly weight loss goal (kg)" inputmode="decimal" step="0.1" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
-        <div class="picker-row" id="healthGoalsRow" style="display:none">
-          <input type="number" id="profileHealthyGoal" placeholder="Healthy+Good % goal" inputmode="numeric" min="0" max="100">
-          <input type="number" id="profileJunkLimit" placeholder="Junk % max" inputmode="numeric" min="0" max="100">
-        </div>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
           <button class="modal-btn modal-btn-add" id="profileSave">Save</button>

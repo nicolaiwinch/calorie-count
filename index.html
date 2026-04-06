@@ -852,25 +852,50 @@
       }
 
       var trainingDays = 0;
-      var dotsHtml = '<div style="display:flex;gap:' + (period === 'week' ? '8' : '3') + 'px;flex-wrap:wrap;justify-content:center;align-items:center">';
-      days.forEach(function(day, i) {
-        var hasTrain = exByDay[day] && exByDay[day] > 0;
-        var isFuture = new Date(day + 'T12:00:00') > today;
-        if (hasTrain) trainingDays++;
-        var color = hasTrain ? green : (isFuture ? 'transparent' : ghost);
-        var opacity = isFuture ? '0' : (hasTrain ? '1' : '0.3');
-        if (period === 'week') {
+      var dotsHtml = '';
+
+      if (period === 'week') {
+        dotsHtml = '<div style="display:flex;gap:8px;justify-content:center;align-items:center">';
+        days.forEach(function(day, i) {
+          var hasTrain = exByDay[day] && exByDay[day] > 0;
+          var isFuture = new Date(day + 'T12:00:00') > today;
+          if (hasTrain) trainingDays++;
+          var color = hasTrain ? green : (isFuture ? 'transparent' : ghost);
+          var opacity = isFuture ? '0' : (hasTrain ? '1' : '0.3');
           dotsHtml += '<div style="text-align:center">' +
             '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';opacity:' + opacity + ';margin:0 auto 2px"></div>' +
             '<div style="font-size:9px;opacity:0.4">' + dayLabels[i] + '</div></div>';
-        } else {
-          // Month: smaller dots with date number
-          dotsHtml += '<div style="text-align:center;min-width:18px">' +
-            '<div style="width:8px;height:8px;border-radius:50%;background:' + color + ';opacity:' + opacity + ';margin:0 auto 1px"></div>' +
-            '<div style="font-size:8px;opacity:0.3">' + dayLabels[i] + '</div></div>';
+        });
+        dotsHtml += '</div>';
+      } else {
+        // Month: calendar grid layout
+        var cellStyle = 'text-align:center;width:14.28%';
+        var dotSize = 10;
+        // Header row
+        dotsHtml = '<div style="display:flex">';
+        dNames.forEach(function(n) {
+          dotsHtml += '<div style="' + cellStyle + ';font-size:9px;opacity:0.3;padding-bottom:4px">' + n.charAt(0) + '</div>';
+        });
+        dotsHtml += '</div>';
+        // Find what weekday the first day of the range falls on (0=Mon)
+        var firstDow = (new Date(rangeStart + 'T12:00:00').getDay() + 6) % 7;
+        dotsHtml += '<div style="display:flex;flex-wrap:wrap">';
+        // Empty cells before first day
+        for (var pad = 0; pad < firstDow; pad++) {
+          dotsHtml += '<div style="' + cellStyle + ';height:24px"></div>';
         }
-      });
-      dotsHtml += '</div>';
+        days.forEach(function(day, i) {
+          var hasTrain = exByDay[day] && exByDay[day] > 0;
+          var isFuture = new Date(day + 'T12:00:00') > today;
+          if (hasTrain) trainingDays++;
+          var color = hasTrain ? green : (isFuture ? 'transparent' : ghost);
+          var opacity = isFuture ? '0' : (hasTrain ? '1' : '0.3');
+          dotsHtml += '<div style="' + cellStyle + ';padding:2px 0">' +
+            '<div style="width:' + dotSize + 'px;height:' + dotSize + 'px;border-radius:50%;background:' + color + ';opacity:' + opacity + ';margin:0 auto 1px"></div>' +
+            '<div style="font-size:8px;opacity:0.3">' + dayLabels[i] + '</div></div>';
+        });
+        dotsHtml += '</div>';
+      }
 
       var summary = '<div style="text-align:center;font-size:12px;opacity:0.6;margin-top:6px">' +
         trainingDays + ' training day' + (trainingDays !== 1 ? 's' : '') +

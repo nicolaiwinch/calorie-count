@@ -107,7 +107,7 @@
     <!-- Training days tracker -->
     <div id="trainingContainer" style="display:none;padding:0 8px">
       <div class="health-bar-container">
-        <div class="health-chart-label">Training</div>
+        <div class="health-chart-label" id="trainingLabel">Training</div>
         <div id="trainingContent"></div>
       </div>
     </div>
@@ -189,7 +189,7 @@
       <!-- Training days tracker (history) -->
       <div id="hist_trainingContainer" style="display:none;padding:0 8px">
         <div class="health-bar-container">
-          <div class="health-chart-label">Training</div>
+          <div class="health-chart-label" id="hist_trainingLabel">Training</div>
           <div id="hist_trainingContent"></div>
         </div>
       </div>
@@ -819,6 +819,13 @@
 
       container.style.display = '';
       var content = document.getElementById(prefix + 'trainingContent');
+      var label = document.getElementById(prefix + 'trainingLabel');
+      if (period === 'month') {
+        var monthDate = new Date(rangeStart + 'T12:00:00');
+        label.textContent = 'Training ' + monthDate.toLocaleString(undefined, { month: 'long' });
+      } else {
+        label.textContent = 'Training';
+      }
       var green = 'var(--color-green)';
       var ghost = 'var(--text-ghost)';
 

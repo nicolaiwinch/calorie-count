@@ -104,6 +104,14 @@
     </div>
 
 
+    <!-- Training days tracker -->
+    <div id="trainingContainer" style="display:none;padding:0 8px">
+      <div class="health-bar-container">
+        <div class="health-chart-label">Training</div>
+        <div id="trainingContent"></div>
+      </div>
+    </div>
+
     <div class="actions">
       <button class="btn btn-food" id="btnFood">+ Food</button>
       <button class="btn btn-exercise" id="btnExercise">+ Exercise</button>
@@ -175,6 +183,14 @@
             </div>
           </div>
           <div class="health-legend" id="hist_barLegend"></div>
+        </div>
+      </div>
+
+      <!-- Training days tracker (history) -->
+      <div id="hist_trainingContainer" style="display:none;padding:0 8px">
+        <div class="health-bar-container">
+          <div class="health-chart-label">Training</div>
+          <div id="hist_trainingContent"></div>
         </div>
       </div>
 
@@ -252,6 +268,10 @@
         <label class="profile-toggle">
           <input type="checkbox" id="profileHealthiness">
           <span>Track food healthiness</span>
+        </label>
+        <label class="profile-toggle">
+          <input type="checkbox" id="profileTraining">
+          <span>Count training days</span>
         </label>
         <input type="number" id="profileWeeklyGoal" placeholder="Weekly weight loss goal (kg)" inputmode="decimal" step="0.1" style="width:100%;padding:16px;border:2px solid var(--border-subtle);border-radius:12px;background:var(--bg-input);color:var(--text-primary);font-size:16px;margin-bottom:12px">
         <div class="picker-row" id="healthGoalsRow" style="display:none">
@@ -598,6 +618,10 @@
       // Healthiness charts
       updateHealthCharts(liveEntries);
 
+      // Training tracker
+      var todayKey = getDayKey();
+      updateTraining(liveEntries, 'day', todayKey, todayKey);
+
       // Update log title
       var logTitle = document.querySelector('#appMain > .log-section > .log-title');
       if (logTitle) {
@@ -739,6 +763,87 @@
       rightGoalEl.textContent = rightGoal;
       rightGoalEl.style.color = rightColor;
       document.getElementById(prefix + 'barLegend').innerHTML = legendHtml;
+    }
+
+    function updateTraining(ents, period, rangeStart, rangeEnd, prefix) {
+      prefix = prefix || '';
+      var container = document.getElementById(prefix + 'trainingContainer');
+      if (!userProfile || !userProfile.track_training) {
+        container.style.display = 'none';
+        return;
+      }
+
+      // Group exercise calories by day
+      var exByDay = {};
+      var totalExCal = 0;
+      ents.forEach(function(e) {
+        if (e.type === 'exercise') {
+          var day = e.time.slice(0, 10);
+          exByDay[day] = (exByDay[day] || 0) + e.cal;
+          totalExCal += e.cal;
+        }
+      });
+
+      container.style.display = '';
+      var content = document.getElementById(prefix + 'trainingContent');
+      var green = 'var(--color-green)';
+      var ghost = 'var(--text-ghost)';
+
+      if (period === 'day') {
+        // Day: just show total active calories
+        var cal = totalExCal;
+        content.innerHTML = '<div style="text-align:center;font-size:14px;padding:4px 0">' +
+          (cal > 0
+            ? '<span style="color:' + green + '">' + cal + ' active cal</span>'
+            : '<span style="opacity:0.3">No exercise today</span>') +
+          '</div>';
+        return;
+      }
+
+      // Build array of days in range
+      var days = [];
+      var dayLabels = [];
+      var dNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      var d = new Date(rangeStart + 'T12:00:00');
+      var end = new Date(rangeEnd + 'T12:00:00');
+      var today = new Date(getDayKey() + 'T12:00:00');
+      while (d <= end) {
+        var ds = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        days.push(ds);
+        if (period === 'week') {
+          dayLabels.push(dNames[(d.getDay() + 6) % 7]);
+        } else {
+          dayLabels.push(String(d.getDate()));
+        }
+        d.setDate(d.getDate() + 1);
+      }
+
+      var trainingDays = 0;
+      var dotsHtml = '<div style="display:flex;gap:' + (period === 'week' ? '8' : '3') + 'px;flex-wrap:wrap;justify-content:center;align-items:center">';
+      days.forEach(function(day, i) {
+        var hasTrain = exByDay[day] && exByDay[day] > 0;
+        var isFuture = new Date(day + 'T12:00:00') > today;
+        if (hasTrain) trainingDays++;
+        var color = hasTrain ? green : (isFuture ? 'transparent' : ghost);
+        var opacity = isFuture ? '0' : (hasTrain ? '1' : '0.3');
+        if (period === 'week') {
+          dotsHtml += '<div style="text-align:center">' +
+            '<div style="width:12px;height:12px;border-radius:50%;background:' + color + ';opacity:' + opacity + ';margin:0 auto 2px"></div>' +
+            '<div style="font-size:9px;opacity:0.4">' + dayLabels[i] + '</div></div>';
+        } else {
+          // Month: smaller dots with date number
+          dotsHtml += '<div style="text-align:center;min-width:18px">' +
+            '<div style="width:8px;height:8px;border-radius:50%;background:' + color + ';opacity:' + opacity + ';margin:0 auto 1px"></div>' +
+            '<div style="font-size:8px;opacity:0.3">' + dayLabels[i] + '</div></div>';
+        }
+      });
+      dotsHtml += '</div>';
+
+      var summary = '<div style="text-align:center;font-size:12px;opacity:0.6;margin-top:6px">' +
+        trainingDays + ' training day' + (trainingDays !== 1 ? 's' : '') +
+        ' · ' + totalExCal + ' active cal</div>';
+
+      content.innerHTML = dotsHtml + summary;
     }
 
     function renderLog(onDelete) {
@@ -966,6 +1071,7 @@
         if (genderSelect.options[i].value === genderValue) { genderSelect.selectedIndex = i; break; }
       }
       document.getElementById('profileHealthiness').checked = !!profile.track_healthiness;
+      document.getElementById('profileTraining').checked = !!profile.track_training;
       document.getElementById('profileWeeklyGoal').value = profile.weekly_kg_goal || '';
       document.getElementById('profileHealthyGoal').value = profile.healthy_goal_pct || '';
       document.getElementById('profileJunkLimit').value = profile.junk_limit_pct || '';
@@ -1009,6 +1115,7 @@
         activity: document.getElementById('profileActivity').value,
         pin: getUserProfile() ? (getUserProfile().pin || '') : '',
         track_healthiness: document.getElementById('profileHealthiness').checked,
+        track_training: document.getElementById('profileTraining').checked,
         weekly_kg_goal: parseFloat(document.getElementById('profileWeeklyGoal').value) || 0,
         healthy_goal_pct: parseInt(document.getElementById('profileHealthyGoal').value) || 0,
         junk_limit_pct: parseInt(document.getElementById('profileJunkLimit').value) || 0,
@@ -1217,6 +1324,10 @@
       document.getElementById('historySummaryLine').textContent = summary;
 
       updateHealthCharts(historyEntries, 'hist_');
+
+      // Training tracker
+      var histRange = getPeriodRange(viewingDate || getDayKey(), historyPeriod);
+      updateTraining(historyEntries, historyPeriod, histRange.start, histRange.end, 'hist_');
 
       var container = document.getElementById('historyLogEntries');
 

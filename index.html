@@ -744,8 +744,8 @@
       var legendHtml = '';
       order.forEach(function(k) {
         if (cats[k] > 0) {
-          legendHtml += '<span class="health-legend-item" style="color:' + colors[k] + ';opacity:0.8">' +
-            labels[k] + ' ' + Math.round(pcts[k]) + '%</span>';
+          legendHtml += '<span class="health-legend-item">' +
+            labels[k] + ' <span style="color:' + colors[k] + '">' + Math.round(pcts[k]) + '%</span></span>';
         }
       });
 

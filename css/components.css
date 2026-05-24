@@ -264,11 +264,11 @@ select.user-picker-input {
 
 /* Maintain weight background shift */
 body.maintain-mode {
-  background: #2a1f2e;
+  background: #1e1225;
 }
 
 body.maintain-mode #appMain {
-  background: #2a1f2e;
+  background: #1e1225;
 }
 
 /* Push content down when mode bar is visible */

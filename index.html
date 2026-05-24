@@ -691,7 +691,7 @@
           var endDate = new Date(range.end + 'T12:00:00');
           forecastText = forecast + ' by ' + endDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         }
-        if (weeklyGoal > 0) forecastText += '  ·  green over ' + Math.round(greenThreshold);
+        if (weeklyGoal > 0 && !isCountdown) forecastText += '  ·  green over ' + Math.round(greenThreshold);
         forecastEl.textContent = forecastText;
       }
 

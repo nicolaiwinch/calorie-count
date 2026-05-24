@@ -52,6 +52,7 @@
   <!-- Main App -->
   <div id="appMain" style="display:none">
 
+    <div class="mode-bar" id="modeBar"></div>
     <button class="switch-user-btn" id="btnSwitchUser"><span id="currentUserLabel"></span> ▾</button>
     <button class="refresh-btn" id="btnRefresh">↻</button>
     <button class="profile-btn" id="btnProfile">Profile</button>
@@ -641,6 +642,25 @@
       var labelEl = document.querySelector('.header .available-label');
       if (labelEl) {
         labelEl.textContent = isCountdown ? 'Calories Left Today' : 'Available Calories';
+      }
+
+      // Update mode bar and background
+      var modeBar = document.getElementById('modeBar');
+      if (modeBar) {
+        var hasGoal = weeklyGoal > 0;
+        if (isCountdown) {
+          modeBar.className = 'mode-bar mode-maintain';
+          modeBar.textContent = 'Maintain Weight';
+          document.body.classList.add('maintain-mode', 'has-mode-bar');
+        } else if (hasGoal) {
+          modeBar.className = 'mode-bar mode-lose';
+          modeBar.textContent = 'Lose Weight';
+          document.body.classList.remove('maintain-mode');
+          document.body.classList.add('has-mode-bar');
+        } else {
+          modeBar.className = 'mode-bar';
+          document.body.classList.remove('maintain-mode', 'has-mode-bar');
+        }
       }
 
       var kgEl = document.getElementById('availableKg');

@@ -234,6 +234,48 @@ select.user-picker-input {
   -webkit-appearance: none;
 }
 
+/* Mode bar */
+.mode-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 4px 0;
+  z-index: 20;
+  display: none;
+}
+
+.mode-bar.mode-maintain {
+  display: block;
+  background: linear-gradient(135deg, #e8a838, #d4892a);
+  color: #1a1a2e;
+}
+
+.mode-bar.mode-lose {
+  display: block;
+  background: linear-gradient(135deg, var(--color-green), #3ba89f);
+  color: #1a1a2e;
+}
+
+/* Maintain weight background shift */
+body.maintain-mode {
+  background: #2a1f2e;
+}
+
+body.maintain-mode #appMain {
+  background: #2a1f2e;
+}
+
+/* Push content down when mode bar is visible */
+body.has-mode-bar {
+  padding-top: 22px;
+}
+
 /* Refresh button */
 .refresh-btn {
   position: absolute;

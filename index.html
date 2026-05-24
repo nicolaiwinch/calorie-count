@@ -630,7 +630,14 @@
 
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var dailyDeficit = weeklyGoal > 0 ? weeklyGoal * 1000 : 0;
-      var isCountdown = userProfile && userProfile.countdown_mode && livePeriod === 'day';
+      var isCountdown = userProfile && userProfile.countdown_mode;
+      var periodDeficit = dailyDeficit;
+      if (livePeriod !== 'day') {
+        var rng = getPeriodRange(getDayKey(), livePeriod);
+        var ds = new Date(rng.start + 'T12:00:00');
+        var de = new Date(rng.end + 'T12:00:00');
+        periodDeficit = dailyDeficit * (Math.round((de - ds) / 86400000) + 1);
+      }
 
       var mainValue = isCountdown ? forecast : available;
       var el = document.getElementById('availableCalories');
@@ -638,7 +645,7 @@
       el.className = 'available-calories';
       if (isCountdown) {
         if (mainValue < 0) el.classList.add('color-red');
-        else if (mainValue < dailyDeficit) el.classList.add('color-yellow');
+        else if (mainValue < periodDeficit) el.classList.add('color-yellow');
         else el.classList.add('color-green');
       } else {
         if (mainValue < 0) el.classList.add('color-red');
@@ -648,7 +655,13 @@
 
       var labelEl = document.querySelector('.header .available-label');
       if (labelEl) {
-        labelEl.textContent = isCountdown ? 'Calories Left Today' : 'Available Calories';
+        if (isCountdown) {
+          if (livePeriod === 'day') labelEl.textContent = 'Calories Left Today';
+          else if (livePeriod === 'week') labelEl.textContent = 'Calories Left This Week';
+          else if (livePeriod === 'month') labelEl.textContent = 'Calories Left This Month';
+        } else {
+          labelEl.textContent = 'Available Calories';
+        }
       }
 
       // Update mode bar and background
@@ -657,7 +670,9 @@
         var hasGoal = weeklyGoal > 0;
         if (isCountdown) {
           modeBar.className = 'mode-bar mode-maintain';
-          modeBar.textContent = 'Available Until Midnight';
+          if (livePeriod === 'day') modeBar.textContent = 'Available Until Midnight';
+          else if (livePeriod === 'week') modeBar.textContent = 'Available This Week';
+          else if (livePeriod === 'month') modeBar.textContent = 'Available This Month';
           document.body.classList.add('maintain-mode', 'has-mode-bar');
         } else if (hasGoal) {
           modeBar.className = 'mode-bar mode-lose';
@@ -683,7 +698,7 @@
       if (forecastEl) {
         var forecastText;
         if (isCountdown) {
-          forecastText = 'green over ' + Math.round(dailyDeficit);
+          forecastText = 'green over ' + Math.round(periodDeficit);
         } else if (livePeriod === 'day') {
           forecastText = forecast + ' by midnight';
         } else {

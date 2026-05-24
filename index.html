@@ -8,6 +8,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon.ico">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="stylesheet" href="css/colors.css?v=20260524">
   <link rel="stylesheet" href="css/main.css?v=20260524">
@@ -52,6 +53,7 @@
   <div id="appMain" style="display:none">
 
     <button class="switch-user-btn" id="btnSwitchUser"><span id="currentUserLabel"></span> ▾</button>
+    <button class="refresh-btn" id="btnRefresh">↻</button>
     <button class="profile-btn" id="btnProfile">Profile</button>
 
     <div class="live-period-tabs-container">
@@ -1918,6 +1920,17 @@
         document.getElementById('btnSwitchUser').addEventListener('click', showUserPicker);
         document.getElementById('btnCreateUser').addEventListener('click', handleCreateUser);
         document.getElementById('btnProfile').addEventListener('click', openProfile);
+        document.getElementById('btnRefresh').addEventListener('click', async function() {
+          if ('caches' in window) {
+            var keys = await caches.keys();
+            await Promise.all(keys.map(function(k) { return caches.delete(k); }));
+          }
+          if ('serviceWorker' in navigator) {
+            var regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(function(r) { return r.unregister(); }));
+          }
+          window.location.reload(true);
+        });
         document.getElementById('profileCancel').addEventListener('click', function() {
           document.getElementById('profileOverlay').classList.remove('active');
         });

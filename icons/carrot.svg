@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#1a1a2e"/>
+  <!-- Carrot body (tilted) -->
+  <g transform="translate(256,270) rotate(-35) translate(-10,-10)">
+    <!-- Main carrot shape -->
+    <path d="M0,-130 C40,-130 65,-80 68,-10 C70,50 55,120 35,180 C20,220 10,240 0,260 C-10,240 -20,220 -35,180 C-55,120 -70,50 -68,-10 C-65,-80 -40,-130 0,-130Z" fill="#F47B2A"/>
+    <!-- Highlight -->
+    <path d="M-15,-120 C-5,-125 15,-125 25,-115 C35,-80 40,-30 38,10 C36,40 30,70 20,100 C15,70 12,30 10,-10 C8,-50 -5,-100 -15,-120Z" fill="#FF9944" opacity="0.5"/>
+    <!-- Carrot lines -->
+    <line x1="-30" y1="10" x2="30" y2="10" stroke="#D4622A" stroke-width="3" opacity="0.4" stroke-linecap="round"/>
+    <line x1="-35" y1="55" x2="35" y2="55" stroke="#D4622A" stroke-width="3" opacity="0.35" stroke-linecap="round"/>
+    <line x1="-28" y1="100" x2="28" y2="100" stroke="#D4622A" stroke-width="2.5" opacity="0.3" stroke-linecap="round"/>
+    <line x1="-18" y1="140" x2="18" y2="140" stroke="#D4622A" stroke-width="2" opacity="0.25" stroke-linecap="round"/>
+    <!-- Leaves -->
+    <path d="M-5,-130 C-25,-190 -60,-220 -50,-185 C-35,-150 -15,-140 -5,-130Z" fill="#4ecdc4"/>
+    <path d="M0,-130 C0,-200 15,-235 20,-195 C25,-155 10,-140 0,-130Z" fill="#3dbdb4"/>
+    <path d="M5,-130 C25,-185 55,-205 45,-175 C30,-145 15,-135 5,-130Z" fill="#4ecdc4" opacity="0.85"/>
+    <path d="M-2,-130 C-40,-175 -70,-180 -55,-160 C-40,-140 -15,-133 -2,-130Z" fill="#45b8b0" opacity="0.7"/>
+  </g>
+</svg>

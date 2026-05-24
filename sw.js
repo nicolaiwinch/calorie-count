@@ -1,6 +1,6 @@
 // Network-first service worker with auto-update
 // Bump SW_VERSION to force cache refresh on all clients
-var SW_VERSION = '20260524b';
+var SW_VERSION = '20260524c';
 var CACHE_NAME = 'calorie-v' + SW_VERSION;
 
 self.addEventListener('install', function(e) {

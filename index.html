@@ -316,6 +316,12 @@
           <input type="checkbox" id="profileTraining">
           <span>Count training days</span>
         </label>
+
+        <div class="profile-section-label">Display</div>
+        <label class="profile-toggle">
+          <input type="checkbox" id="profileCountdown">
+          <span>Show calories left until midnight</span>
+        </label>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
           <button class="modal-btn modal-btn-add" id="profileSave">Save</button>
@@ -621,27 +627,37 @@
         greenThreshold = GREEN_THRESHOLD;
       }
 
+      var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
+      var isCountdown = userProfile && userProfile.countdown_mode && livePeriod === 'day';
+
+      var mainValue = isCountdown ? forecast : available;
       var el = document.getElementById('availableCalories');
-      el.textContent = Math.round(available);
+      el.textContent = Math.round(mainValue);
       el.className = 'available-calories';
-      if (available < 0) el.classList.add('color-red');
-      else if (weeklyGoal > 0 && available < greenThreshold) el.classList.add('color-yellow');
+      if (mainValue < 0) el.classList.add('color-red');
+      else if (weeklyGoal > 0 && mainValue < greenThreshold) el.classList.add('color-yellow');
       else el.classList.add('color-green');
+
+      var labelEl = document.querySelector('.header .available-label');
+      if (labelEl) {
+        labelEl.textContent = isCountdown ? 'Calories Left Today' : 'Available Calories';
+      }
 
       var kgEl = document.getElementById('availableKg');
       if (kgEl) {
-        var kg = available / 7000;
+        var kg = mainValue / 7000;
         var sign = kg >= 0 ? '-' : '+';
         kgEl.textContent = '(' + sign + Math.abs(kg).toFixed(2) + ' kg)';
         kgEl.style.color = kg >= 0 ? 'var(--color-green)' : 'var(--color-red)';
         kgEl.style.opacity = '1';
       }
 
-      var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var forecastEl = document.getElementById('forecastCalories');
       if (forecastEl) {
         var forecastText;
-        if (livePeriod === 'day') {
+        if (isCountdown) {
+          forecastText = available + ' available now';
+        } else if (livePeriod === 'day') {
           forecastText = forecast + ' by midnight';
         } else {
           var range = getPeriodRange(getDayKey(), livePeriod);
@@ -1213,6 +1229,7 @@
       }
       document.getElementById('profileHealthiness').checked = !!profile.track_healthiness;
       document.getElementById('profileTraining').checked = !!profile.track_training;
+      document.getElementById('profileCountdown').checked = !!profile.countdown_mode;
       document.getElementById('profileWeeklyGoal').value = profile.weekly_kg_goal || '';
       document.getElementById('profileHealthyGoal').value = profile.healthy_goal_pct || '';
       document.getElementById('profileJunkLimit').value = profile.junk_limit_pct || '';
@@ -1257,6 +1274,7 @@
         pin: getUserProfile() ? (getUserProfile().pin || '') : '',
         track_healthiness: document.getElementById('profileHealthiness').checked,
         track_training: document.getElementById('profileTraining').checked,
+        countdown_mode: document.getElementById('profileCountdown').checked,
         weekly_kg_goal: parseFloat(document.getElementById('profileWeeklyGoal').value) || 0,
         healthy_goal_pct: parseInt(document.getElementById('profileHealthyGoal').value) || 0,
         junk_limit_pct: parseInt(document.getElementById('profileJunkLimit').value) || 0,

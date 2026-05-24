@@ -351,10 +351,15 @@
       document.getElementById('loadingMsg').innerHTML =
         '<span style="color:#e74c3c">Error: ' + msg + '<br>' + url + ':' + line + '</span>';
     };
-    // Kill any old service workers immediately
+    // Register service worker and auto-reload on updates
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(regs) {
-        regs.forEach(function(r) { r.unregister(); });
+      navigator.serviceWorker.register('sw.js').then(function(reg) {
+        // Check for updates every 5 minutes
+        setInterval(function() { reg.update(); }, 5 * 60 * 1000);
+        // When a new SW takes over, reload to get fresh content
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          window.location.reload();
+        });
       });
     }
   </script>

@@ -650,11 +650,11 @@
         var hasGoal = weeklyGoal > 0;
         if (isCountdown) {
           modeBar.className = 'mode-bar mode-maintain';
-          modeBar.textContent = 'Until Midnight';
+          modeBar.textContent = 'Available Until Midnight';
           document.body.classList.add('maintain-mode', 'has-mode-bar');
         } else if (hasGoal) {
           modeBar.className = 'mode-bar mode-lose';
-          modeBar.textContent = 'Right Now';
+          modeBar.textContent = 'Available Right Now';
           document.body.classList.remove('maintain-mode');
           document.body.classList.add('has-mode-bar');
         } else {

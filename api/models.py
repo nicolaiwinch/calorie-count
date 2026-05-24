@@ -40,6 +40,7 @@ class UserProfile(BaseModel):
     healthy_goal_pct: int = 0     # min % for healthy + good pick (0 = no goal)
     junk_limit_pct: int = 0       # max % for junk food (0 = no limit)
     track_training: bool = False
+    countdown_mode: bool = False
 
 
 def calculate_daily_burn(profile: dict) -> int:

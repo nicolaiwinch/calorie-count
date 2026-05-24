@@ -321,7 +321,7 @@
         <div class="profile-section-label">Display</div>
         <label class="profile-toggle">
           <input type="checkbox" id="profileCountdown">
-          <span>Show calories left until midnight (maintain weight)</span>
+          <span>Until midnight mode (show full day remaining)</span>
         </label>
         <div class="modal-actions">
           <button class="modal-btn modal-btn-cancel" id="profileCancel">Cancel</button>
@@ -650,11 +650,11 @@
         var hasGoal = weeklyGoal > 0;
         if (isCountdown) {
           modeBar.className = 'mode-bar mode-maintain';
-          modeBar.textContent = 'Maintain Weight';
+          modeBar.textContent = 'Until Midnight';
           document.body.classList.add('maintain-mode', 'has-mode-bar');
         } else if (hasGoal) {
           modeBar.className = 'mode-bar mode-lose';
-          modeBar.textContent = 'Lose Weight';
+          modeBar.textContent = 'Right Now';
           document.body.classList.remove('maintain-mode');
           document.body.classList.add('has-mode-bar');
         } else {

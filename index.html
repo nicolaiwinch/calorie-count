@@ -112,6 +112,9 @@
       </div>
     </div>
 
+    <!-- Meal reminder messages -->
+    <div id="mealReminder" class="meal-reminder" style="display:none"></div>
+
     <div class="actions">
       <button class="btn btn-food" id="btnFood">+ Food</button>
       <button class="btn btn-exercise" id="btnExercise">+ Exercise</button>
@@ -514,6 +517,7 @@
     // ===== live period =====
     var livePeriod = 'day'; // day, week, month
     var liveEntries = []; // entries for the current live period (may be more than today)
+    var reminder16Dismissed = false; // dismissed when food > 200 cal added after 16:00
 
     async function loadLiveEntries() {
       if (!currentUser) { entries = []; liveEntries = []; return; }
@@ -614,7 +618,7 @@
       el.textContent = Math.round(available);
       el.className = 'available-calories';
       if (available < 0) el.classList.add('color-red');
-      else if (available < greenThreshold) el.classList.add('color-yellow');
+      else if (weeklyGoal > 0 && available < greenThreshold) el.classList.add('color-yellow');
       else el.classList.add('color-green');
 
       var kgEl = document.getElementById('availableKg');
@@ -662,6 +666,60 @@
         else if (livePeriod === 'week') logTitle.textContent = 'This Week';
         else if (livePeriod === 'month') logTitle.textContent = 'This Month';
       }
+    }
+
+    function updateMealReminder() {
+      var el = document.getElementById('mealReminder');
+      if (!el) return;
+
+      // Only show on today in day mode, and only for maintenance (no weight loss goal)
+      var weeklyGoal = (userProfile && userProfile.weekly_kg_goal) || 0;
+      if (livePeriod !== 'day' || weeklyGoal > 0) {
+        el.style.display = 'none';
+        return;
+      }
+
+      var now = new Date();
+      var hour = now.getHours();
+      var profileName = (userProfile && userProfile.name) || 'du';
+
+      // Calculate calories needed to reach zero by midnight
+      var totals = { eaten: 0, exercise: 0 };
+      entries.forEach(function(e) {
+        if (e.type === 'food') totals.eaten += e.cal;
+        else totals.exercise += e.cal;
+      });
+      var caloriesNeeded = getDailyBurn() - totals.eaten + totals.exercise;
+
+      // 20:00 message (takes priority over 16:00)
+      if (hour >= 20) {
+        if (caloriesNeeded > 100) {
+          el.className = 'meal-reminder reminder-serious';
+          el.innerHTML = '<div class="reminder-emoji">\u261D\uFE0F\uD83D\uDE10</div>' +
+            '<div>K\u00E6re <span class="reminder-name">' + escapeHtml(profileName) + '</span>, ' +
+            'du skal lige spise <span class="reminder-cal">' + Math.round(caloriesNeeded) + '</span> kalorier for at holde din v\u00E6gt</div>';
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+        return;
+      }
+
+      // 16:00 message
+      if (hour >= 16) {
+        if (caloriesNeeded >= 700 && !reminder16Dismissed) {
+          el.className = 'meal-reminder';
+          el.innerHTML = '<div class="reminder-emoji">\uD83D\uDE0A</div>' +
+            '<div>K\u00E6re <span class="reminder-name">' + escapeHtml(profileName) + '</span>, ' +
+            'spis nu en god portion aftensmad p\u00E5 minimum <span class="reminder-cal">' + Math.round(caloriesNeeded) + '</span> kalorier</div>';
+          el.style.display = 'block';
+        } else {
+          el.style.display = 'none';
+        }
+        return;
+      }
+
+      el.style.display = 'none';
     }
 
     var HEALTH_COLORS = { red: 'var(--color-red)', orange: '#f1c40f', yellow: '#5bc0de', green: 'var(--color-green)' };
@@ -1042,6 +1100,7 @@
     // ===== app =====
     function refresh() {
       updateDisplay();
+      updateMealReminder();
       renderLog(handleDelete);
     }
 
@@ -1051,6 +1110,10 @@
     }
 
     async function handleAdd(type, name, cal, healthiness) {
+      // Dismiss 16:00 reminder on food entry > 200 cal
+      if (type === 'food' && cal > 200 && new Date().getHours() >= 16) {
+        reminder16Dismissed = true;
+      }
       await addEntryToState(type, name, cal, healthiness);
       if (document.getElementById('historyView').style.display !== 'none') {
         historyEntries = entries;
@@ -1924,7 +1987,10 @@
         }
 
         setInterval(function() {
-          if (document.getElementById('historyView').style.display === 'none') updateDisplay();
+          if (document.getElementById('historyView').style.display === 'none') {
+            updateDisplay();
+            updateMealReminder();
+          }
         }, 1000);
 
         var currentDayKey = getDayKey();
@@ -1932,6 +1998,7 @@
           var newKey = getDayKey();
           if (newKey !== currentDayKey) {
             currentDayKey = newKey;
+            reminder16Dismissed = false;
             await loadEntries();
             refresh();
           }

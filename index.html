@@ -630,16 +630,21 @@
 
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
       var dailyDeficit = weeklyGoal > 0 ? weeklyGoal * 1000 : 0;
-      var countdownValue = forecast - dailyDeficit;
       var isCountdown = userProfile && userProfile.countdown_mode && livePeriod === 'day';
 
-      var mainValue = isCountdown ? countdownValue : available;
+      var mainValue = isCountdown ? forecast : available;
       var el = document.getElementById('availableCalories');
       el.textContent = Math.round(mainValue);
       el.className = 'available-calories';
-      if (mainValue < 0) el.classList.add('color-red');
-      else if (weeklyGoal > 0 && mainValue < greenThreshold) el.classList.add('color-yellow');
-      else el.classList.add('color-green');
+      if (isCountdown) {
+        if (mainValue < 0) el.classList.add('color-red');
+        else if (mainValue < dailyDeficit) el.classList.add('color-yellow');
+        else el.classList.add('color-green');
+      } else {
+        if (mainValue < 0) el.classList.add('color-red');
+        else if (weeklyGoal > 0 && mainValue < greenThreshold) el.classList.add('color-yellow');
+        else el.classList.add('color-green');
+      }
 
       var labelEl = document.querySelector('.header .available-label');
       if (labelEl) {
@@ -678,7 +683,7 @@
       if (forecastEl) {
         var forecastText;
         if (isCountdown) {
-          forecastText = forecast + ' to maintain  ·  ' + available + ' right now';
+          forecastText = available + ' right now  ·  lose below ' + Math.round(dailyDeficit);
         } else if (livePeriod === 'day') {
           forecastText = forecast + ' by midnight';
         } else {

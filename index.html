@@ -629,9 +629,11 @@
       }
 
       var forecast = forecastBurn - liveTotals.eaten + liveTotals.exercise;
+      var dailyDeficit = weeklyGoal > 0 ? weeklyGoal * 1000 : 0;
+      var countdownValue = forecast - dailyDeficit;
       var isCountdown = userProfile && userProfile.countdown_mode && livePeriod === 'day';
 
-      var mainValue = isCountdown ? forecast : available;
+      var mainValue = isCountdown ? countdownValue : available;
       var el = document.getElementById('availableCalories');
       el.textContent = Math.round(mainValue);
       el.className = 'available-calories';

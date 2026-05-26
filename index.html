@@ -639,13 +639,13 @@
         periodDeficit = dailyDeficit * (Math.round((de - ds) / 86400000) + 1);
       }
 
-      var mainValue = isCountdown ? forecast : available;
+      var mainValue = isCountdown ? (forecast - periodDeficit) : available;
       var el = document.getElementById('availableCalories');
       el.textContent = Math.round(mainValue);
       el.className = 'available-calories';
       if (isCountdown) {
-        if (mainValue < 0) el.classList.add('color-red');
-        else if (mainValue < periodDeficit) el.classList.add('color-yellow');
+        if (mainValue < -periodDeficit) el.classList.add('color-red');
+        else if (mainValue < 0) el.classList.add('color-yellow');
         else el.classList.add('color-green');
       } else {
         if (mainValue < 0) el.classList.add('color-red');
@@ -698,7 +698,7 @@
       if (forecastEl) {
         var forecastText;
         if (isCountdown) {
-          forecastText = 'green over ' + Math.round(periodDeficit);
+          forecastText = 'yellow below 0  ·  red below -' + Math.round(periodDeficit);
         } else if (livePeriod === 'day') {
           forecastText = forecast + ' by midnight';
         } else {
